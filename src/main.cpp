@@ -4,6 +4,7 @@
 extern void sprint(const char* format, ...);
 extern void audioTask(void* param);
 extern void transmitTask(void* param);
+extern void receiveTask(void* param);
 
 // audio.cpp
 extern void setupAudio();
@@ -36,6 +37,7 @@ void setup() {
   // run audio loopback on a separate task
   xTaskCreate(&audioTask,     "AudioTask",    AUDIO_TASK_STACK_SIZE,    NULL, 1, NULL);
   xTaskCreate(&transmitTask,  "TransmitTask", TRANSMIT_TASK_STACK_SIZE, NULL, 1, NULL);
+  xTaskCreate(&receiveTask,   "ReceiveTask",  TRANSMIT_TASK_STACK_SIZE, NULL, 1, NULL);
 
   sprint("MAIN:setup_done");
 }

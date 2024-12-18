@@ -24,9 +24,9 @@
 // Sample rate (don't change)
 #define AUDIO_SAMPLE_RATE   8000
 // Codec2-related
-#define CODEC CODEC2_MODE_1200
+#define CODEC CODEC2_MODE_1200  // don't use 700C
 #define CODEC2_LPC_PF_ENABLE    1   // decent audio quality increase
-#define CODEC2_LPC_PF_BASSBOOST 0
+#define CODEC2_LPC_PF_BASSBOOST 0   // don't use this
 #define CODEC2_LPC_PF_BETA      0.2 // [0.8] in sh123/loradv, new values are from
 #define CODEC2_LPC_PF_GAMMA     0.5 // [0.2]                  drowe67/codec2/doc/codec2.pdf
 
@@ -41,8 +41,8 @@
 // LoRa params
 #define LORA_FREQ   434.0F  // initial frequency
 #define LORA_BW     125.0F  // bandwidth in kHz
-#define LORA_SF     9U      // spreading factor // 5U
-#define LORA_CR     7U      // coding rate denominator
+#define LORA_SF     9U      // spreading factor (SF12 is too slow for DV)
+#define LORA_CR     8U      // coding rate denominator
 #define LORA_SW     12U     // sync word
 #define LORA_POWER  10      // this one's signed - output power in dBm
 #define LORA_PL     8U      // preamble length
