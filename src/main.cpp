@@ -65,14 +65,15 @@ void setup() {
 }
 
 void loop() {
-  // handle PTT button 
-  if (analogRead(PTTBTN_PIN) == 4095 && !ptt_pressed) {
+  bool ptt_state = (analogRead(PTTBTN_PIN) == 4095);
+
+  if (ptt_state && !ptt_pressed) {
     LOG_INFO("PTT pushed, start TX");
     ptt_pressed = true;
 
     // notify to start recording
     xTaskNotify(audio_task_handle, AUDIO_TASK_RECORD_BIT, eSetBits);
-  } else if (analogRead(PTTBTN_PIN) == 4095 && ptt_pressed) {
+  } else if (!ptt_state && ptt_pressed) {
     LOG_INFO("PTT released");
     ptt_pressed = false;
   }
