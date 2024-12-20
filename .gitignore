@@ -1,2 +1,12 @@
-.pio
+.pio/build
+.pio/libdeps/lolin32_lite/RadioLib
+.pio/libdeps/lolin32_lite/CircularBuffer
+.pio/libdeps/lolin32_lite/DebugLog
+.pio/libdeps/lolin32_lite/arduino-timer
+.pio/libdeps/lolin32_lite/esp32_codec2
+.pio/libdeps/lolin32_lite/ArxContainer
+.pio/libdeps/lolin32_lite/ArxTypeTraits
+.pio/libdeps/lolin32_lite/integrity.dat
+.pio/libdeps/lolin32_lite/TFT_eSPI/*
+!.pio/libdeps/lolin32_lite/TFT_eSPI/User_Setup.h
 .vscode

@@ -1,19 +1,12 @@
 #include <config.h>
 
-extern bool ptt_pressed;
-
 SX1262 radio = new Module(LORA_RADIO_PIN_SS, LORA_RADIO_PIN_A, LORA_RADIO_PIN_RST, LORA_RADIO_PIN_B);
 
-TaskHandle_t audio_task_handle;       // audio playback/record task
-TaskHandle_t lora_task_handle;        // lora rx/tx task
+TaskHandle_t audio_task_handle;
+TaskHandle_t lora_task_handle;
+TaskHandle_t display_task_handle;
 
-extern Timer<1> light_sleep_timer;
-extern bool light_sleep(void *param);
-extern void light_sleep_reset();
-extern void onLoraDataAvailableIsr();
-extern void audio_task(void *param);
-extern void lora_task(void *param);
-extern void setupAudio();
+volatile char radioAction = 0; // 0 - listening, 1 - receiving, 2 - transmitting
 
 void setup() {
   LOG_SET_LEVEL(DebugLogLevel::LVL_INFO);
@@ -39,6 +32,7 @@ void setup() {
   radio.setRfSwitchPins(LORA_RADIO_PIN_RXEN, LORA_RADIO_PIN_TXEN);
   radio.clearDio1Action();
   radio.setDio1Action(onLoraDataAvailableIsr);
+  //radio.setRxBoostedGainMode(true, true);
 #ifdef LORA_RADIO_EXPL 
   LOG_INFO("Using explicit header");
   radio.explicitHeader();
@@ -48,9 +42,12 @@ void setup() {
 #endif
 
   setupAudio();
-
-  xTaskCreate(&audio_task,  "audio_task", 32000,  NULL, 5, &audio_task_handle);
-  xTaskCreate(&lora_task,   "lora_task",  8000,   NULL, 5, &lora_task_handle);
+  #ifdef ENABLE_DISPLAY
+  setupDisplay();
+  xTaskCreate(&display_task,"display_task", 8000,   NULL, 5, &display_task_handle);
+  #endif
+  xTaskCreate(&audio_task,  "audio_task",   32000,  NULL, 5, &audio_task_handle);
+  xTaskCreate(&lora_task,   "lora_task",    8000,   NULL, 5, &lora_task_handle);
 
   state = radio.startReceive();
   if (state != RADIOLIB_ERR_NONE) {
