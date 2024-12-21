@@ -53,14 +53,13 @@ extern void setupDisplay();
 #define LIGHT_SLEEP_BITMASK     (uint64_t)(1 << LORA_RADIO_PIN_B) // bit mask for ext1 high pin wake up
 
 // Audio
+#define AUDIO_I2S_SCK   14
 // Speaker
-#define AUDIO_SPEAKER_BCLK  26
 #define AUDIO_SPEAKER_LRC   13
 #define AUDIO_SPEAKER_DIN   25
 // Microphone
 #define AUDIO_MIC_SD    32
 #define AUDIO_MIC_WS    15
-#define AUDIO_MIC_SCK   14
 // Sample rate (don't change)
 #define AUDIO_SAMPLE_RATE   8000
 // Codec2-related
@@ -83,12 +82,12 @@ extern void setupDisplay();
 #define LORA_RADIO_PIN_TXEN 0   // TXEN 7
 // LoRa params
 #define LORA_RADIO_FREQ 434.0   // initial frequency
-#define LORA_RADIO_BW   31.25    // bandwidth in kHz
+#define LORA_RADIO_BW   31.25   // bandwidth in kHz
 #define LORA_RADIO_SF   7       // spreading factor (SF12-10 is too slow for DV)
 #define LORA_RADIO_CR   5       // coding rate denominator
-#define LORA_RADIO_SYNC 0x34    // sync word
+#define LORA_RADIO_SYNC 8       // sync word
 #define LORA_RADIO_PWR  2       // power in dbm (real is +10db if module has amplifier)
-#define LORA_RADIO_PL   8       // preamble length
+#define LORA_RADIO_PL   12      // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL true    // comment out to use implicit mode (for spreading factor 6)
 
