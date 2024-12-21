@@ -88,7 +88,7 @@ extern void setupDisplay();
 #define LORA_RADIO_CR   5       // coding rate denominator
 #define LORA_RADIO_SYNC 0x34    // sync word
 #define LORA_RADIO_PWR  2       // power in dbm (real is +10db if module has amplifier)
-#define LORA_RADIO_PL   4U      // preamble length
+#define LORA_RADIO_PL   8       // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL true    // comment out to use implicit mode (for spreading factor 6)
 
