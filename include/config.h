@@ -83,7 +83,7 @@ extern void setupDisplay();
 #define LORA_RADIO_PIN_TXEN 0   // TXEN 7
 // LoRa params
 #define LORA_RADIO_FREQ 434.0   // initial frequency
-#define LORA_RADIO_BW   31.25   // bandwidth in kHz
+#define LORA_RADIO_BW   31.25    // bandwidth in kHz
 #define LORA_RADIO_SF   7       // spreading factor (SF12-10 is too slow for DV)
 #define LORA_RADIO_CR   5       // coding rate denominator
 #define LORA_RADIO_SYNC 0x34    // sync word
