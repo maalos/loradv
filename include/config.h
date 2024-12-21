@@ -45,11 +45,10 @@ extern void setupDisplay();
 
 // PTT button
 #define PTTBTN_PIN      36 // VP
-#define PTTBTN_GPIO_PIN GPIO_NUM_36 // vp
 
 // Misc
-//#define ENABLE_LIGHT_SLEEP      true
-#define LIGHT_SLEEP_DELAY_MS    5000  // how long to wait before engering light sleep
+//#define ENABLE_LIGHT_SLEEP
+#define LIGHT_SLEEP_DELAY_MS    5000  // how long to wait before entering light sleep
 #define LIGHT_SLEEP_BITMASK     (uint64_t)(1 << LORA_RADIO_PIN_B) // bit mask for ext1 high pin wake up
 
 // Audio
