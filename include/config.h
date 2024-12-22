@@ -12,9 +12,18 @@
 #include <SPI.h>
 #include <DejaVu_Sans_Mono_Bold_24.h>
 #include <DejaVu_Sans_Mono_Bold_52.h>
+#include <AiEsp32RotaryEncoder.h>
+
+// Rotary encoder
+#define ROTARY_ENCODER_A_PIN 34
+#define ROTARY_ENCODER_B_PIN 39     // VN
+#define ROTARY_ENCODER_BUTTON_PIN   33
+
+// GPIO 26, 4 free
 
 // Display
 #define LDV_PURPLE 0x2009
+#define DISPLAY_BACKLIGHT_PIN 16
 
 // Externs
 extern SX1262 radio;
