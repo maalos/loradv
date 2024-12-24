@@ -7,10 +7,10 @@ Timer<1>::Task sleepTimerTask;
 bool sleep(void *param)
 {
 #ifdef ENABLE_SLEEP
+	radioAction = 0;
+	vTaskDelay(2000 / portTICK_PERIOD_MS);
+	radioAction = 0;
 	LOG_INFO("Entering sleep");
-	radioAction = 0;
-	vTaskDelay(2000);
-	radioAction = 0;
 	// wake up on ptt button or lora radio incoming data
 	digitalWrite(TFT_BL, LOW);
 	esp_sleep_enable_ext1_wakeup(SLEEP_BITMASK, ESP_EXT1_WAKEUP_ANY_HIGH);
