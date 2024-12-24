@@ -1,15 +1,20 @@
 #include <config.h>
 
 TFT_eSPI tft = TFT_eSPI();
+TaskHandle_t displayTaskHandle;
 
 int16_t ttf_width = tft.width();
 int16_t ttf_halfwidth = ttf_width / 2;
 int16_t ttf_height = tft.height();
 int16_t ttf_halfheight = ttf_height / 2;
 
+bool appStopSignal = false;
+
+typedef std::pair<const char *, std::function<void()>> appPair_t;
+
 void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor)
 {
-    tft.setTextColor(fgColor, LDV_PURPLE, true);
+    tft.setTextColor(fgColor, DISP_BGCOLOR, true);
     tft.setTextDatum(ML_DATUM);
     tft.drawString(text, 0, y);
     tft.setTextColor(TFT_WHITE);
@@ -43,59 +48,54 @@ const char *rssiToSValue(short rssi)
     return "    S0";
 }
 
-const char *c2ToString() {
-    if (CODEC2_MODE == CODEC2_MODE_3200) return "3200";
-    if (CODEC2_MODE == CODEC2_MODE_2400) return "2400";
-    if (CODEC2_MODE == CODEC2_MODE_1600) return "1600";
-    if (CODEC2_MODE == CODEC2_MODE_1400) return "1400";
-    if (CODEC2_MODE == CODEC2_MODE_1300) return "1300";
-    if (CODEC2_MODE == CODEC2_MODE_1200) return "1200";
-    if (CODEC2_MODE == CODEC2_MODE_700C) return "700C";
+const char *c2ToString()
+{
+    if (CODEC2_MODE == CODEC2_MODE_3200)
+        return "3200";
+    if (CODEC2_MODE == CODEC2_MODE_2400)
+        return "2400";
+    if (CODEC2_MODE == CODEC2_MODE_1600)
+        return "1600";
+    if (CODEC2_MODE == CODEC2_MODE_1400)
+        return "1400";
+    if (CODEC2_MODE == CODEC2_MODE_1300)
+        return "1300";
+    if (CODEC2_MODE == CODEC2_MODE_1200)
+        return "1200";
+    if (CODEC2_MODE == CODEC2_MODE_700C)
+        return "700C";
     return "WHAT";
+}
+
+std::map<const char *, std::function<void()>> appMap = {
+    {"VFO/CH (home)  ", vfoApp},
+    {"Settings       ", settingsApp},
+};
+
+appPair_t findAppPairByName(const char *name)
+{
+    auto it = appMap.find(name);
+    if (it != appMap.end())
+    {
+        return *it;
+    }
+
+    return appPair_t{"", nullptr};
 }
 
 char array[18];
 
-void display_task(void *param)
+void displayTask(void *param)
 {
     LOG_INFO("Display task started");
-    short rssi;
-    float snr;
 
-    tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
+    appPair_t currentAppPair = *appMap.begin();
 
     while (true)
     {
-        rssi = radio.getRSSI();
-        snr = radio.getSNR();
+        currentAppPair.second();
 
-        switch (radioAction)
-        {
-        case 2:
-            updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "TX ", TFT_RED);
-            break;
-
-        case 1:
-            // row 1
-            updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "RX ", TFT_GREEN);
-            // row 5
-            sprintf(array, "          %s", rssiToSValue(rssi));
-            updateStringAt(ttf_halfwidth, ttf_halfheight + 40, array, TFT_GREEN);
-
-            sprintf(array, "%ddB", rssi);
-            updateStringAt(ttf_halfwidth, ttf_halfheight + 40, array, TFT_GREEN);
-
-            sprintf(array, "SNR: %.01f", snr);
-            updateStringAt(ttf_halfwidth, ttf_halfheight + 70, array, TFT_GREEN);
-            break;
-        default:
-            updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "LI ", TFT_DARKGREY);
-            updateStringAt(ttf_halfwidth, ttf_halfheight + 40, "                 ", TFT_GREEN);
-            updateStringAt(ttf_halfwidth, ttf_halfheight + 70, "                 ", TFT_GREEN);
-            break;
-        }
-
-        vTaskDelay(500 / portTICK_PERIOD_MS); // update it every 250ms
+        vTaskDelay(500 / portTICK_PERIOD_MS); // update it every 500ms
     }
 
     LOG_INFO("Display task done");
@@ -106,7 +106,7 @@ void setupDisplay()
 {
     tft.init();
     tft.setRotation(3);
-    tft.fillScreen(LDV_PURPLE);
+    tft.fillScreen(DISP_BGCOLOR);
     tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
 
     // row 1
@@ -136,5 +136,5 @@ void setupDisplay()
     tft.setTextDatum(MC_DATUM);
     tft.setTextColor(TFT_WHITE);
     tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
-    tft.drawString("434.000", ttf_halfwidth, ttf_halfheight);
+    tft.drawString((String)getFrequency(), ttf_halfwidth, ttf_halfheight);
 }

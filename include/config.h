@@ -13,53 +13,28 @@
 #include <DejaVu_Sans_Mono_Bold_24.h>
 #include <DejaVu_Sans_Mono_Bold_52.h>
 #include <AiEsp32RotaryEncoder.h>
-
-// Rotary encoder
-#define ROTARY_ENCODER_A_PIN 34
-#define ROTARY_ENCODER_B_PIN 39     // VN
-#define ROTARY_ENCODER_BUTTON_PIN   33
+#include <Preferences.h>
+#include <map>
 
 // GPIO 26, 4 free
 
-// Display
-#define LDV_PURPLE 0x2009
-#define DISPLAY_BACKLIGHT_PIN 16
-
-// Externs
 extern SX1262 radio;
-
+#define SERIAL_BAUD_RATE    9600
+#define PTTBTN_PIN      36 // VP
+#define PTTBTN_NUM_PIN  GPIO_NUM_36 // VP
 extern volatile bool ptt_pressed;
 extern volatile char radioAction;
 
+// sleep.cpp
+//#define ENABLE_LIGHT_SLEEP
+#define LIGHT_SLEEP_DELAY_MS    5000  // how long to wait before entering light sleep
+#define LIGHT_SLEEP_BITMASK     (uint64_t)(1 << LORA_RADIO_PIN_B) // bit mask for ext1 high pin wake up
 extern Timer<1> light_sleep_timer;
 extern bool light_sleep(void *param);
 extern void light_sleep_reset();
 extern void onLoraDataAvailableIsr();
 
-extern TaskHandle_t audio_task_handle;
-extern void audio_task(void *param);
-extern void setupAudio();
-
-extern TaskHandle_t lora_task_handle;
-extern void lora_task(void *param);
-
-extern TaskHandle_t display_task_handle;
-extern void display_task(void *param);
-extern void setupDisplay();
-
-#define ENABLE_DISPLAY
-
-// Serial
-#define SERIAL_BAUD_RATE    9600
-
-// PTT button
-#define PTTBTN_PIN      36 // VP
-
-// Misc
-//#define ENABLE_LIGHT_SLEEP
-#define LIGHT_SLEEP_DELAY_MS    5000  // how long to wait before entering light sleep
-#define LIGHT_SLEEP_BITMASK     (uint64_t)(1 << LORA_RADIO_PIN_B) // bit mask for ext1 high pin wake up
-
+// audio.cpp
 // Audio
 #define AUDIO_I2S_SCK   14
 // Speaker
@@ -76,8 +51,29 @@ extern void setupDisplay();
 #define CODEC2_LPC_PF_BASSBOOST 0   // don't use this
 #define CODEC2_LPC_PF_BETA      0.2 // [0.8] in sh123/loradv, new values are from
 #define CODEC2_LPC_PF_GAMMA     0.5 // [0.2]                  drowe67/codec2/doc/codec2.pdf
+#define AUDIO_TASK_PLAY_BIT         0x01    // task bit flag to start playback
+#define AUDIO_TASK_RECORD_BIT       0x02    // task bit flag to start recording
+extern TaskHandle_t audioTaskHandle;
+extern struct CODEC2 *c2;
+extern int c2_samples_per_frame;
+extern int c2_bytes_per_frame;
+extern int16_t *c2_samples;
+extern uint8_t *c2_bits;
+extern void audioTask(void *param);
+extern void setupAudio();
 
-// Radio-related
+// preferences.cpp
+extern std::map<const char*, float> settings;
+extern void set_default_settings();
+extern void setup_preferences();
+extern void setSetting(const char* key, float value);
+extern float getSetting(const char* key);
+
+// lora.cpp
+#define LORA_RADIO_TASK_RX_BIT      0x01    // lora task rx bit command
+#define LORA_RADIO_TASK_TX_BIT      0x02    // lora task tx bit command
+#define LORA_RADIO_BUF_LEN      256   // packets buffer size
+#define LORA_RADIO_QUEUE_LEN    512   // queues length
 // VSPI pin definitions + E220-400M30S labels
 #define LORA_RADIO_PIN_SS   SS  // 5 - NSS 19
 #define SCK_PIN             18  // SCK 18
@@ -97,19 +93,67 @@ extern void setupDisplay();
 #define LORA_RADIO_PWR  2       // power in dbm (real is +10db if module has amplifier)
 #define LORA_RADIO_PL   12      // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
-#define LORA_RADIO_EXPL true    // comment out to use implicit mode (for spreading factor 6)
+#define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)
+extern TaskHandle_t loraTaskHandle;
+extern void loraTask(void *param);
+// lora task packet and packet index/size queues
+extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_rx_queue;
+extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_rx_queue_index;
+extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_tx_queue;
+extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_tx_queue_index;
+// packet buffers
+extern byte lora_radio_rx_buf[LORA_RADIO_BUF_LEN];  // tx packet buffer
+extern byte lora_radio_tx_buf[LORA_RADIO_BUF_LEN]; // rx packet buffer
+extern float getFrequency();
+extern void setFrequency(float freq);
+extern float getBandwidth();
+extern void setBandwidth(float bw);
+extern float getSpreadingFactor();
+extern void setSpreadingFactor(float sf);
+extern float getCodingRate();
+extern void setCodingRate(float cr);
+extern float getSyncWord();
+extern void setSyncWord(float sw);
+extern float getOutputPower();
+extern void setOutputPower(float txp);
+extern float getPreambleLength();
+extern void setPreambleLength(float pl);
+extern float getCrcLength();
+extern void setCrcLength(float crcl);
 
-// Queues and buffers
-#define LORA_RADIO_BUF_LEN      256   // packets buffer size
-#define LORA_RADIO_QUEUE_LEN    512   // queues length
 
-// Tasks
-#define LORA_RADIO_TASK_RX_BIT      0x01    // lora task rx bit command
-#define LORA_RADIO_TASK_TX_BIT      0x02    // lora task tx bit command
-#define AUDIO_TASK_PLAY_BIT         0x01    // task bit flag to start playback
-#define AUDIO_TASK_RECORD_BIT       0x02    // task bit flag to start recording
+// display.cpp
+#define ENABLE_DISPLAY
+#define DISP_BGCOLOR 0x2009
+#define DISPLAY_BACKLIGHT_PIN 16
+extern TFT_eSPI tft;
+extern const char *rssiToSValue(short rssi);
+extern const char *c2ToString();
+extern TaskHandle_t displayTaskHandle;
+extern int16_t ttf_width;
+extern int16_t ttf_halfwidth;
+extern int16_t ttf_height;
+extern int16_t ttf_halfheight;
+extern bool appStopSignal;
+extern void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor);
+extern char array[18];
+extern void displayTask(void *param);
+extern void setupDisplay();
 
-#endif // CONFIG_H
+// encoder.cpp
+#define ROTARY_ENCODER_A_PIN 34
+#define ROTARY_ENCODER_B_PIN 39     // VN
+#define ROTARY_ENCODER_BUTTON_PIN   33
+extern TaskHandle_t encoderTaskHandle;
+extern void encoderTask(void *param);
+extern void setupEncoder();
+
+
+// apps/vfo.cpp
+extern void vfoApp();
+
+// apps/settings.cpp
+extern void settingsApp();
 
 
 /*
@@ -131,5 +175,6 @@ GOOD CONFIGS
 
 3200@125:SF7:CR8    best cr // poor hams lol, i'd use this
 3200@250:SF9:CR5    best rsens
-
 */
+
+#endif // CONFIG_H

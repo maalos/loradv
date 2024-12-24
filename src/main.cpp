@@ -1,11 +1,5 @@
 #include <config.h>
 
-SX1262 radio = new Module(LORA_RADIO_PIN_SS, LORA_RADIO_PIN_A, LORA_RADIO_PIN_RST, LORA_RADIO_PIN_B);
-
-TaskHandle_t audio_task_handle;
-TaskHandle_t lora_task_handle;
-TaskHandle_t display_task_handle;
-
 volatile char radioAction = 0; // 0 - listening, 1 - receiving, 2 - transmitting
 
 void setup()
@@ -13,11 +7,14 @@ void setup()
 	LOG_SET_LEVEL(DebugLogLevel::LVL_INFO);
 
 	Serial.begin(SERIAL_BAUD_RATE);
-	while (!Serial);
+	while (!Serial)
+		;
 
 	delay(1000); // wait for platformio's serialmon window change
 
 	LOG_INFO("Board setup started");
+
+	setup_preferences();
 
 	// setup ptt button
 	pinMode(PTTBTN_PIN, INPUT);
@@ -46,13 +43,17 @@ void setup()
 	radio.implicitHeader();
 #endif
 
-	setupAudio();
 #ifdef ENABLE_DISPLAY
 	setupDisplay();
-	xTaskCreate(&display_task, "display_task", 8000, NULL, 5, &display_task_handle);
+	xTaskCreate(&displayTask, "displayTask", 8000, NULL, 5, &displayTaskHandle);
 #endif
-	xTaskCreate(&audio_task, "audio_task", 32000, NULL, 5, &audio_task_handle);
-	xTaskCreate(&lora_task, "lora_task", 8000, NULL, 5, &lora_task_handle);
+	setupAudio();
+	xTaskCreate(&audioTask, "audioTask", 32000, NULL, 5, &audioTaskHandle);
+
+	setupEncoder();
+	xTaskCreate(&encoderTask, "audioTask", 32000, NULL, 5, &encoderTaskHandle);
+
+	xTaskCreate(&loraTask, "loraTask", 8000, NULL, 5, &loraTaskHandle);
 
 	state = radio.startReceive();
 	if (state != RADIOLIB_ERR_NONE)
@@ -77,7 +78,7 @@ void loop()
 		ptt_pressed = true;
 
 		// notify to start recording
-		xTaskNotify(audio_task_handle, AUDIO_TASK_RECORD_BIT, eSetBits);
+		xTaskNotify(audioTaskHandle, AUDIO_TASK_RECORD_BIT, eSetBits);
 	}
 	else if (!ptt_state && ptt_pressed)
 	{
