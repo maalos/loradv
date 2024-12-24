@@ -95,7 +95,7 @@ void displayTask(void *param)
     {
         currentAppPair.second();
 
-        vTaskDelay(500 / portTICK_PERIOD_MS); // update it every 500ms
+        vTaskDelay(250 / portTICK_PERIOD_MS); // update it every 250ms
     }
 
     LOG_INFO("Display task done");
@@ -131,10 +131,4 @@ void setupDisplay()
     updateStringAt(ttf_halfwidth, ttf_halfheight - 40, array, TFT_ORANGE);
 
     updateStringAt(ttf_halfwidth, ttf_halfheight - 40, "CH1", TFT_WHITE);
-
-    // freq - row 4
-    tft.setTextDatum(MC_DATUM);
-    tft.setTextColor(TFT_WHITE);
-    tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
-    tft.drawString((String)getFrequency(), ttf_halfwidth, ttf_halfheight);
 }

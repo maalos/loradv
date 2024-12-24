@@ -16,6 +16,8 @@
 #include <Preferences.h>
 #include <map>
 
+#define DEBUGLOG_DEFAULT_LOG_LEVEL_INFO true
+
 // GPIO 26, 4 free
 
 extern SX1262 radio;
@@ -25,13 +27,25 @@ extern SX1262 radio;
 extern volatile bool ptt_pressed;
 extern volatile char radioAction;
 
+// encoder.cpp
+#define ROTARY_ENCODER_A_PIN 34
+#define ROTARY_ENCODER_A_PIN_NUM    GPIO_NUM_34
+#define ROTARY_ENCODER_B_PIN 39     // VN
+#define ROTARY_ENCODER_B_PIN_NUM    GPIO_NUM_39
+#define ROTARY_ENCODER_BUTTON_PIN   33
+#define ROTARY_ENCODER_BUTTON_PIN_NUM   GPIO_NUM_33
+extern TaskHandle_t encoderTaskHandle;
+extern void encoderTask(void *param);
+extern void setupEncoder();
+
 // sleep.cpp
-//#define ENABLE_LIGHT_SLEEP
-#define LIGHT_SLEEP_DELAY_MS    5000  // how long to wait before entering light sleep
-#define LIGHT_SLEEP_BITMASK     (uint64_t)(1 << LORA_RADIO_PIN_B) // bit mask for ext1 high pin wake up
-extern Timer<1> light_sleep_timer;
-extern bool light_sleep(void *param);
-extern void light_sleep_reset();
+#define ENABLE_SLEEP
+#define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
+#define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)
+#define SLEEP_BITMASK   BUTTON_PIN_BITMASK(PTTBTN_NUM_PIN) | BUTTON_PIN_BITMASK(LORA_RADIO_PIN_B_NUM) | BUTTON_PIN_BITMASK(ROTARY_ENCODER_A_PIN_NUM) | BUTTON_PIN_BITMASK(ROTARY_ENCODER_B_PIN_NUM) | BUTTON_PIN_BITMASK(ROTARY_ENCODER_BUTTON_PIN_NUM)
+extern Timer<1> sleepTimer;
+extern bool sleep(void *param);
+extern void sleepReset();
 extern void onLoraDataAvailableIsr();
 
 // audio.cpp
@@ -81,6 +95,7 @@ extern float getSetting(const char* key);
 #define MOSI_PIN            23  // MOSI 17
 #define LORA_RADIO_PIN_A    17  // DIO1 13
 #define LORA_RADIO_PIN_B    35  // BUSY 14
+#define LORA_RADIO_PIN_B_NUM    GPIO_NUM_35
 #define LORA_RADIO_PIN_RST  22  // NRST 15
 #define LORA_RADIO_PIN_RXEN 2   // RXEN 6
 #define LORA_RADIO_PIN_TXEN 0   // TXEN 7
@@ -139,14 +154,6 @@ extern void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor);
 extern char array[18];
 extern void displayTask(void *param);
 extern void setupDisplay();
-
-// encoder.cpp
-#define ROTARY_ENCODER_A_PIN 34
-#define ROTARY_ENCODER_B_PIN 39     // VN
-#define ROTARY_ENCODER_BUTTON_PIN   33
-extern TaskHandle_t encoderTaskHandle;
-extern void encoderTask(void *param);
-extern void setupEncoder();
 
 
 // apps/vfo.cpp

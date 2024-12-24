@@ -2,6 +2,8 @@
 
 Preferences preferences;
 
+std::map<const char *, float> IRAM_ATTR settingsCache;
+
 std::map<const char *, float> defaultSettings = {
     // max 16 chars
     {"Codec2 mode    ", CODEC2_MODE_1200},
@@ -48,8 +50,25 @@ void setup_preferences()
 {
     LOG_INFO("Setting up preferences");
     preferences.begin("loradv", false);
+
+    // do we need defaults?
     if (preferences.getFloat("Frequency       ", 0.0) == 0.0)
         set_default_settings();
+    
+    // load into cache
+    for (const auto &pair : defaultSettings)
+    {
+        float value = preferences.getFloat(pair.first, -1); // -1 if not found
+        if (value != -1)
+        {
+            settingsCache[pair.first] = value; // set default
+        }
+        else
+        {
+            settingsCache[pair.first] = pair.second;
+            preferences.putFloat(pair.first, pair.second);
+        }
+    }
 }
 
 void setSetting(const char *key, float value)
@@ -59,6 +78,8 @@ void setSetting(const char *key, float value)
     {
         key = it->second;
     }
+
+    settingsCache[key] = value;
 
     preferences.putFloat(key, value);
 }
@@ -71,5 +92,11 @@ float getSetting(const char *key)
         key = it->second;
     }
 
-    return preferences.getFloat(key);
+    auto cacheIt = settingsCache.find(key);
+    if (cacheIt != settingsCache.end())
+    {
+        return cacheIt->second; // return from cache
+    }
+
+    return preferences.getFloat(key); // if not in cache return from flash
 }

@@ -129,8 +129,8 @@
 // driven with a PWM signal or turned OFF/ON then this must be handled by the user
 // sketch. e.g. with digitalWrite(TFT_BL, LOW);
 
-// #define TFT_BL   32            // LED back-light control pin
-// #define TFT_BACKLIGHT_ON HIGH  // Level to turn ON back-light (HIGH or LOW)
+#define TFT_BL   16            // LED back-light control pin
+#define TFT_BACKLIGHT_ON HIGH  // Level to turn ON back-light (HIGH or LOW)
 
 
 
@@ -217,6 +217,7 @@
 #define TFT_DC    27  // Data Command control pin
 //#define TFT_RST   33  // Reset pin (could connect to RST pin)
 #define TFT_RST  -1  // Set TFT_RST to -1 if display RESET is connected to ESP32 board RST
+#define TOUCH_CS -1     // Chip select pin (T_CS) of touch screen
 
 // For ESP32 Dev board (only tested with GC9A01 display)
 // The hardware SPI can be mapped to any pins

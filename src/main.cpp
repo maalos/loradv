@@ -62,10 +62,10 @@ void setup()
 	}
 	LOG_INFO("Board setup completed");
 
-#ifdef ENABLE_LIGHT_SLEEP
-	LOG_INFO("Light sleep is enabled");
+#ifdef ENABLE_SLEEP
+	LOG_INFO("Sleep is enabled");
 #endif
-	light_sleep_reset();
+	sleepReset();
 }
 
 void loop()
@@ -85,6 +85,6 @@ void loop()
 		LOG_INFO("PTT released");
 		ptt_pressed = false;
 	}
-	light_sleep_timer.tick();
+	sleepTimer.tick();
 	delay(50);
 }

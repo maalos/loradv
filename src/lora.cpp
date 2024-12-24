@@ -34,7 +34,6 @@ void loraTask(void *param)
 		// lora rx
 		if (lora_status_bits & LORA_RADIO_TASK_RX_BIT)
 		{
-			radioAction = 1;
 			int packet_size = radio.getPacketLength();
 			if (packet_size <= 0)
 			{
@@ -69,7 +68,7 @@ void loraTask(void *param)
 			{
 				LOG_ERROR("Start receive error: ", state);
 			}
-			light_sleep_reset();
+			sleepReset();
 		} // lora rx
 		// lora tx data
 		else if (lora_status_bits & LORA_RADIO_TASK_TX_BIT)
@@ -93,6 +92,7 @@ void loraTask(void *param)
 					LOG_ERROR("Lora radio transmit failed:", state);
 					continue;
 				}
+				sleepReset();
 
 				LOG_DEBUG("Transmitted packet", tx_bytes_cnt);
 				vTaskDelay(1);
@@ -106,7 +106,7 @@ void loraTask(void *param)
 				LOG_ERROR("Start receive error: ", state);
 			}
 			lora_enable_isr = true;
-			light_sleep_reset();
+			sleepReset();
 		} // lora tx
 	} // task loop
 }

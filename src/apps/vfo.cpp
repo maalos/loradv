@@ -1,8 +1,10 @@
 #include <config.h>
 
-short rssi;
-float snr;
-bool vfoAppInitialized = false;
+volatile short rssi;
+volatile float snr;
+volatile bool vfoAppInitialized = false;
+volatile float previousFrequency = getFrequency();
+volatile float newFrequency = 0;
 
 void vfoApp()
 {
@@ -10,6 +12,15 @@ void vfoApp()
     {
         tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
         vfoAppInitialized = true;
+    }
+    newFrequency = getFrequency();
+    if (newFrequency != previousFrequency) {
+        tft.setTextDatum(MC_DATUM);
+        tft.setTextColor(TFT_WHITE);
+        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
+        tft.drawString(String(newFrequency, 3), ttf_halfwidth, ttf_halfheight);
+        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24); // reset font
+        previousFrequency = newFrequency;
     }
 
     rssi = radio.getRSSI();

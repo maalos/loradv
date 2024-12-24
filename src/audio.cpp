@@ -112,7 +112,6 @@ void audioTask(void *param)
 			// while rx frames are available and button is not pressed
 			while (!ptt_pressed && !lora_radio_rx_queue_index.isEmpty())
 			{
-				radioAction = 1;
 				int packet_size = lora_radio_rx_queue_index.shift();
 				LOG_DEBUG("Playing packet", packet_size);
 				// split by frame, decode and play
@@ -126,7 +125,6 @@ void audioTask(void *param)
 					vTaskDelay(1);
 				}
 			} // while rx data available
-			radioAction = 0;
 		} // audio decode playback
 		// audio record-encode-tx
 		else if (audio_bits & AUDIO_TASK_RECORD_BIT)
