@@ -4,7 +4,7 @@
 PCB: yet to be released  
 MCU: WeMos Lolin32 Lite  
 LoRa: Ebyte E220-400M30S  
-Battery connector: 3P right angle battery connector, 3mm pitch, 6.8mm height  
+Battery connector: BC-4-3P (3P right angle battery connector, 3mm pitch, 6.8mm height)  
 Battery: BL-5C style  
 Display: 1.54" ST7789  
 I2S amp: MAX98357(A)  
