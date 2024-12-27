@@ -6,6 +6,7 @@
 .pio/libdeps/lolin32_lite/esp32_codec2
 .pio/libdeps/lolin32_lite/ArxContainer
 .pio/libdeps/lolin32_lite/ArxTypeTraits
+.pio/libdeps/lolin32_lite/TJpg_Decoder
 .pio/libdeps/lolin32_lite/integrity.dat
 .pio/libdeps/lolin32_lite/TFT_eSPI/*
 !.pio/libdeps/lolin32_lite/TFT_eSPI/User_Setup.h

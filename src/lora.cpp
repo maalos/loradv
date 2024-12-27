@@ -14,14 +14,22 @@ byte lora_radio_rx_buf[LORA_RADIO_BUF_LEN]; // tx packet buffer
 byte lora_radio_tx_buf[LORA_RADIO_BUF_LEN]; // rx packet buffer
 
 volatile bool lora_enable_isr = true; // true to enable rx isr, disabled on tx
-volatile bool ptt_pressed = false;
+volatile bool pttPressed = false;
 
 unsigned long lastI2STime = 0;
+
+int state;
 
 // lora trasmit receive task
 void loraTask(void *param)
 {
 	LOG_INFO("Lora task started");
+
+	state = radio.startReceive();
+	if (state != RADIOLIB_ERR_NONE)
+	{
+		LOG_ERROR("Receive start error:", state);
+	}
 
 	// wait for ISR notification, read data and send for audio processing
 	while (true)
@@ -40,7 +48,7 @@ void loraTask(void *param)
 				continue;
 			}
 
-			int state = radio.readData(lora_radio_rx_buf, packet_size);
+			state = radio.readData(lora_radio_rx_buf, packet_size);
 			if (state != RADIOLIB_ERR_NONE)
 			{
 				LOG_ERROR("Read data error: ", state);
@@ -86,7 +94,7 @@ void loraTask(void *param)
 				}
 
 				// transmit packet
-				int state = radio.transmit(lora_radio_tx_buf, tx_bytes_cnt);
+				state = radio.transmit(lora_radio_tx_buf, tx_bytes_cnt);
 				if (state != RADIOLIB_ERR_NONE)
 				{
 					LOG_ERROR("Lora radio transmit failed:", state);
@@ -100,7 +108,7 @@ void loraTask(void *param)
 			radioAction = 0;
 
 			// switch to receive after all transmitted
-			int state = radio.startReceive();
+			state = radio.startReceive();
 			if (state != RADIOLIB_ERR_NONE)
 			{
 				LOG_ERROR("Start receive error: ", state);

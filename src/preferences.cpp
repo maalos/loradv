@@ -21,7 +21,7 @@ std::map<const char *, float> defaultSettings = {
     {"CRC length     ", LORA_RADIO_CRC},
 };
 
-std::map<const char *, const char *> abbreviations = {
+std::map<const char *, const char *> IRAM_ATTR abbreviations = {
     {"C2MODE", "Codec2 mode    "},
     {"C2LPCEN", "C2 LPCPF enable"},
     {"C2LPCBB", "C2 LPCPF bassb."},

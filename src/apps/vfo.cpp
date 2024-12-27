@@ -10,11 +10,37 @@ void vfoApp()
 {
     if (!vfoAppInitialized)
     {
+        tft.fillScreen(DISP_BGCOLOR);
+        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
+
+        // row 1
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "            100%", TFT_GREEN);
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "     4.19V", TFT_GREEN);
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "LI", TFT_DARKGREY);
+
+        // tft.drawLine(0, ttf_halfheight - 85, ttf_width, ttf_halfheight - 85,    TFT_WHITE);
+
+        // row 2
+        sprintf(array, "           %ddBm", LORA_RADIO_PWR + 10); // +10dBm because of the PA
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 70, array, TFT_RED);
+
+        sprintf(array, "    %.01fkHz", LORA_RADIO_BW);
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 70, array, TFT_ORANGE);
+
+        sprintf(array, "SF%d", LORA_RADIO_SF);
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 70, "SF7", TFT_ORANGE);
+
+        // row 3
+        sprintf(array, "            %s", c2ToString());
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 40, array, TFT_ORANGE);
+
+        updateStringAt(ttf_halfwidth, ttf_halfheight - 40, "CH1", TFT_WHITE);
         tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
         vfoAppInitialized = true;
     }
     newFrequency = getFrequency();
-    if (newFrequency != previousFrequency) {
+    if (newFrequency != previousFrequency)
+    {
         tft.setTextDatum(MC_DATUM);
         tft.setTextColor(TFT_WHITE);
         tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);

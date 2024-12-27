@@ -110,7 +110,7 @@ void audioTask(void *param)
 		{
 			LOG_DEBUG("Playing audio");
 			// while rx frames are available and button is not pressed
-			while (!ptt_pressed && !lora_radio_rx_queue_index.isEmpty())
+			while (!pttPressed && !lora_radio_rx_queue_index.isEmpty())
 			{
 				int packet_size = lora_radio_rx_queue_index.shift();
 				LOG_DEBUG("Playing packet", packet_size);
@@ -132,7 +132,7 @@ void audioTask(void *param)
 			LOG_DEBUG("Recording audio");
 			int packet_size = 0;
 			// record while button is pressed
-			while (ptt_pressed)
+			while (pttPressed)
 			{
 				// send packet if enough audio encoded frames are accumulated
 				if (packet_size + c2_bytes_per_frame > AUDIO_MAX_PACKET_SIZE)
@@ -152,7 +152,7 @@ void audioTask(void *param)
 				}
 				packet_size += c2_bytes_per_frame;
 				vTaskDelay(1);
-			} // ptt_pressed
+			} // pttPressed
 			// send remaining tail audio encoded samples
 			if (packet_size > 0)
 			{

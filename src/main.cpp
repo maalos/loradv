@@ -14,12 +14,18 @@ void setup()
 
 	LOG_INFO("Board setup started");
 
+/*
 	setup_preferences();
 
 	// setup ptt button
 	pinMode(PTTBTN_PIN, INPUT);
 
-	int state = radio.begin(LORA_RADIO_FREQ, LORA_RADIO_BW, LORA_RADIO_SF, LORA_RADIO_CR, LORA_RADIO_SYNC, LORA_RADIO_PWR, LORA_RADIO_PL, 0, false);
+	// setup the encoder
+	pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT);
+	pinMode(ROTARY_ENCODER_A_PIN, INPUT);
+	pinMode(ROTARY_ENCODER_B_PIN, INPUT);
+
+	state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
 	if (state != RADIOLIB_ERR_NONE)
 	{
 		LOG_ERROR("Lora radio start failed:", state);
@@ -43,23 +49,23 @@ void setup()
 	radio.implicitHeader();
 #endif
 
-#ifdef ENABLE_DISPLAY
+*/
 	setupDisplay();
-	xTaskCreate(&displayTask, "displayTask", 8000, NULL, 5, &displayTaskHandle);
-#endif
+
+	connectToWiFi();
+
+	xTaskCreate(&displayTask, "displayTask", 64000, NULL, 5, &displayTaskHandle);
+
+	/*
 	setupAudio();
-	xTaskCreate(&audioTask, "audioTask", 32000, NULL, 5, &audioTaskHandle);
+	xTaskCreate(&audioTask, "audioTask", 32000, NULL, 5, &audioTaskHandle);	// TODO: lower the stack depth
 
 	setupEncoder();
-	xTaskCreate(&encoderTask, "audioTask", 32000, NULL, 5, &encoderTaskHandle);
+	xTaskCreate(&encoderTask, "encoderTask", 32000, NULL, 5, &encoderTaskHandle);	// TODO: lower the stack depth
 
 	xTaskCreate(&loraTask, "loraTask", 8000, NULL, 5, &loraTaskHandle);
+	*/
 
-	state = radio.startReceive();
-	if (state != RADIOLIB_ERR_NONE)
-	{
-		LOG_ERROR("Receive start error:", state);
-	}
 	LOG_INFO("Board setup completed");
 
 #ifdef ENABLE_SLEEP
@@ -70,20 +76,20 @@ void setup()
 
 void loop()
 {
-	bool ptt_state = (analogRead(PTTBTN_PIN) >= 3000);
+	bool pttState = (analogRead(PTTBTN_PIN) >= 3000);
 
-	if (ptt_state && !ptt_pressed)
+	if (pttState && !pttPressed)
 	{
 		LOG_INFO("PTT pushed, start TX");
-		ptt_pressed = true;
+		pttPressed = true;
 
 		// notify to start recording
 		xTaskNotify(audioTaskHandle, AUDIO_TASK_RECORD_BIT, eSetBits);
 	}
-	else if (!ptt_state && ptt_pressed)
+	else if (!pttState && pttPressed)
 	{
 		LOG_INFO("PTT released");
-		ptt_pressed = false;
+		pttPressed = false;
 	}
 	sleepTimer.tick();
 	delay(50);

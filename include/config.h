@@ -15,6 +15,9 @@
 #include <AiEsp32RotaryEncoder.h>
 #include <Preferences.h>
 #include <map>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <LittleFS.h>
 
 #define DEBUGLOG_DEFAULT_LOG_LEVEL_INFO true
 
@@ -23,26 +26,22 @@
 extern SX1262 radio;
 #define SERIAL_BAUD_RATE    9600
 #define PTTBTN_PIN      36 // VP
-#define PTTBTN_NUM_PIN  GPIO_NUM_36 // VP
-extern volatile bool ptt_pressed;
+extern volatile bool pttPressed;
 extern volatile char radioAction;
 
 // encoder.cpp
 #define ROTARY_ENCODER_A_PIN 34
-#define ROTARY_ENCODER_A_PIN_NUM    GPIO_NUM_34
 #define ROTARY_ENCODER_B_PIN 39     // VN
-#define ROTARY_ENCODER_B_PIN_NUM    GPIO_NUM_39
 #define ROTARY_ENCODER_BUTTON_PIN   33
-#define ROTARY_ENCODER_BUTTON_PIN_NUM   GPIO_NUM_33
 extern TaskHandle_t encoderTaskHandle;
 extern void encoderTask(void *param);
 extern void setupEncoder();
 
 // sleep.cpp
-#define ENABLE_SLEEP
-#define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
-#define BUTTON_PIN_BITMASK(GPIO) (1ULL << GPIO)
-#define SLEEP_BITMASK   BUTTON_PIN_BITMASK(PTTBTN_NUM_PIN) | BUTTON_PIN_BITMASK(LORA_RADIO_PIN_B_NUM) // | BUTTON_PIN_BITMASK(ROTARY_ENCODER_A_PIN_NUM) | BUTTON_PIN_BITMASK(ROTARY_ENCODER_B_PIN_NUM) | BUTTON_PIN_BITMASK(ROTARY_ENCODER_BUTTON_PIN_NUM)
+//#define ENABLE_SLEEP
+#define SLEEP_DELAY_MS  10000  // how long to wait before entering sleep
+#define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
+#define SLEEP_BITMASK   PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(LORA_RADIO_PIN_B) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN)
 extern Timer<1> sleepTimer;
 extern bool sleep(void *param);
 extern void sleepReset();
@@ -95,7 +94,6 @@ extern float getSetting(const char* key);
 #define MOSI_PIN            23  // MOSI 17
 #define LORA_RADIO_PIN_A    17  // DIO1 13
 #define LORA_RADIO_PIN_B    35  // BUSY 14
-#define LORA_RADIO_PIN_B_NUM    GPIO_NUM_35
 #define LORA_RADIO_PIN_RST  22  // NRST 15
 #define LORA_RADIO_PIN_RXEN 2   // RXEN 6
 #define LORA_RADIO_PIN_TXEN 0   // TXEN 7
@@ -110,6 +108,7 @@ extern float getSetting(const char* key);
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)
 extern TaskHandle_t loraTaskHandle;
+extern int state;
 extern void loraTask(void *param);
 // lora task packet and packet index/size queues
 extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_rx_queue;
@@ -118,7 +117,7 @@ extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_tx_queue;
 extern CircularBuffer<uint8_t, LORA_RADIO_QUEUE_LEN> lora_radio_tx_queue_index;
 // packet buffers
 extern byte lora_radio_rx_buf[LORA_RADIO_BUF_LEN];  // tx packet buffer
-extern byte lora_radio_tx_buf[LORA_RADIO_BUF_LEN]; // rx packet buffer
+extern byte lora_radio_tx_buf[LORA_RADIO_BUF_LEN];  // rx packet buffer
 extern float getFrequency();
 extern void setFrequency(float freq);
 extern float getBandwidth();
@@ -138,7 +137,6 @@ extern void setCrcLength(float crcl);
 
 
 // display.cpp
-#define ENABLE_DISPLAY
 #define DISP_BGCOLOR 0x2009
 #define DISPLAY_BACKLIGHT_PIN 16
 extern TFT_eSPI tft;
@@ -162,6 +160,9 @@ extern void vfoApp();
 // apps/settings.cpp
 extern void settingsApp();
 
+// apps/maps.cpp
+extern void connectToWiFi();
+extern void mapsApp();
 
 /*
 GOOD CONFIGS
