@@ -8,12 +8,12 @@ TaskHandle_t encoderTaskHandle;
 void setupEncoder()
 {
     rotaryEncoder.begin();
-    LOG_INFO("Encoder setup");
+	Serial.println(F("Encoder setup"));
 }
 
 void encoderTask(void *param)
 {
-    LOG_INFO("Encoder task started");
+	Serial.println(F("Encoder task started"));
     while (true)
     {
         if (rotaryEncoder.encoderChanged())

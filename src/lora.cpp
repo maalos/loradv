@@ -23,12 +23,12 @@ int state;
 // lora trasmit receive task
 void loraTask(void *param)
 {
-	LOG_INFO("Lora task started");
+	Serial.println(F("Lora task started"));
 
 	state = radio.startReceive();
 	if (state != RADIOLIB_ERR_NONE)
 	{
-		LOG_ERROR("Receive start error:", state);
+		Serial.printf("Receive start error: %d", state);
 	}
 
 	// wait for ISR notification, read data and send for audio processing
@@ -37,7 +37,7 @@ void loraTask(void *param)
 		uint32_t lora_status_bits = 0;
 		xTaskNotifyWaitIndexed(0, 0x00, ULONG_MAX, &lora_status_bits, portMAX_DELAY);
 
-		LOG_DEBUG("Lora task bits", lora_status_bits);
+		Serial.printf("Lora task bits: %d", lora_status_bits);
 
 		// lora rx
 		if (lora_status_bits & LORA_RADIO_TASK_RX_BIT)
@@ -51,14 +51,14 @@ void loraTask(void *param)
 			state = radio.readData(lora_radio_rx_buf, packet_size);
 			if (state != RADIOLIB_ERR_NONE)
 			{
-				LOG_ERROR("Read data error: ", state);
+				Serial.printf("Read data error: %d", lora_status_bits);
 			}
 
 			// process packet
-			LOG_DEBUG("Received packet, size", packet_size);
+			Serial.printf("Received packet, size: %d", packet_size);
 			if (packet_size % c2_bytes_per_frame != 0)
 			{
-				LOG_ERROR("Audio packet of wrong size, expected mod", c2_bytes_per_frame);
+				Serial.printf("Audio packet of wrong size, expected mod %d", c2_bytes_per_frame);
 				continue;
 			}
 
@@ -74,7 +74,7 @@ void loraTask(void *param)
 			state = radio.startReceive();
 			if (state != RADIOLIB_ERR_NONE)
 			{
-				LOG_ERROR("Start receive error: ", state);
+				Serial.printf("Start receive error: %d", state);
 			}
 			sleepReset();
 		} // lora rx
@@ -97,12 +97,12 @@ void loraTask(void *param)
 				state = radio.transmit(lora_radio_tx_buf, tx_bytes_cnt);
 				if (state != RADIOLIB_ERR_NONE)
 				{
-					LOG_ERROR("Lora radio transmit failed:", state);
+					Serial.printf("Lora radio transmit failed: %d", state);
 					continue;
 				}
 				sleepReset();
 
-				LOG_DEBUG("Transmitted packet", tx_bytes_cnt);
+				Serial.printf("Transmitted packet: %d bytes", tx_bytes_cnt);
 				vTaskDelay(1);
 			} // packet transmit loop
 			radioAction = 0;
@@ -111,7 +111,7 @@ void loraTask(void *param)
 			state = radio.startReceive();
 			if (state != RADIOLIB_ERR_NONE)
 			{
-				LOG_ERROR("Start receive error: ", state);
+				Serial.printf("Start receive error: %d", state);
 			}
 			lora_enable_isr = true;
 			sleepReset();

@@ -30,11 +30,11 @@ void setupAudio()
 		.data_in_num = I2S_PIN_NO_CHANGE};
 	if (i2s_driver_install(I2S_NUM_0, &i2s_speaker_config, 0, NULL) != ESP_OK)
 	{
-		LOG_ERROR("Failed to install i2s speaker driver");
+		Serial.println(F("Failed to install i2s speaker driver"));
 	}
 	if (i2s_set_pin(I2S_NUM_0, &i2s_speaker_pin_config) != ESP_OK)
 	{
-		LOG_ERROR("Failed to set i2s speaker pins");
+		Serial.println(F("Failed to set i2s speaker pins"));
 	}
 
 	// setup microphone
@@ -57,11 +57,11 @@ void setupAudio()
 		.data_in_num = AUDIO_MIC_SD};
 	if (i2s_driver_install(I2S_NUM_1, &i2s_mic_config, 0, NULL) != ESP_OK)
 	{
-		LOG_ERROR("Failed to install i2s mic driver");
+		Serial.println(F("Failed to install i2s mic driver"));
 	}
 	if (i2s_set_pin(I2S_NUM_1, &i2s_mic_pin_config) != ESP_OK)
 	{
-		LOG_ERROR("Failed to set i2s mic pins");
+		Serial.println(F("Failed to set i2s mic pins"));
 	}
 }
 
@@ -76,13 +76,13 @@ void setupAudio()
 // audio record/playback encode/decode task
 void audioTask(void *param)
 {
-	LOG_INFO("Audio task started");
+	Serial.println(F("Audio task started"));
 
 	// construct codec2
 	c2 = codec2_create(CODEC2_MODE);
 	if (c2 == NULL)
 	{
-		LOG_ERROR("Failed to create codec2");
+		Serial.println(F("Failed to create codec2"));
 		for (;;)
 		{
 			delay(1000);
@@ -94,7 +94,7 @@ void audioTask(void *param)
 	c2_bytes_per_frame = codec2_bytes_per_frame(c2);
 	c2_samples = (int16_t *)malloc(sizeof(int16_t) * c2_samples_per_frame);
 	c2_bits = (uint8_t *)malloc(sizeof(uint8_t) * c2_bytes_per_frame);
-	LOG_INFO("C2 initialized", c2_samples_per_frame, c2_bytes_per_frame);
+	Serial.println(F("C2 initialized"));
 
 	// wait for data notification, decode frames and playback
 	size_t bytes_read, bytes_written;
@@ -103,17 +103,17 @@ void audioTask(void *param)
 		uint32_t audio_bits = 0;
 		xTaskNotifyWaitIndexed(0, 0x00, ULONG_MAX, &audio_bits, portMAX_DELAY);
 
-		LOG_DEBUG("Audio task bits", audio_bits);
+		// Serial.printf("Audio task bits: %d", audio_bits);
 
 		// audio rx-decode-playback
 		if (audio_bits & AUDIO_TASK_PLAY_BIT)
 		{
-			LOG_DEBUG("Playing audio");
+			Serial.println(F("Playing audio"));
 			// while rx frames are available and button is not pressed
 			while (!pttPressed && !lora_radio_rx_queue_index.isEmpty())
 			{
 				int packet_size = lora_radio_rx_queue_index.shift();
-				LOG_DEBUG("Playing packet", packet_size);
+				Serial.println(F("Playing packet"));
 				// split by frame, decode and play
 				for (int i = 0; i < packet_size; i++)
 				{
@@ -129,7 +129,7 @@ void audioTask(void *param)
 		// audio record-encode-tx
 		else if (audio_bits & AUDIO_TASK_RECORD_BIT)
 		{
-			LOG_DEBUG("Recording audio");
+			//Serial.println(F("Recording audio"));
 			int packet_size = 0;
 			// record while button is pressed
 			while (pttPressed)
@@ -137,7 +137,7 @@ void audioTask(void *param)
 				// send packet if enough audio encoded frames are accumulated
 				if (packet_size + c2_bytes_per_frame > AUDIO_MAX_PACKET_SIZE)
 				{
-					LOG_DEBUG("Recorded packet", packet_size);
+					//Serial.println(F("Recorded packet"));
 					lora_radio_tx_queue_index.push(packet_size);
 					xTaskNotify(loraTaskHandle, LORA_RADIO_TASK_TX_BIT, eSetBits);
 					packet_size = 0;
@@ -156,7 +156,7 @@ void audioTask(void *param)
 			// send remaining tail audio encoded samples
 			if (packet_size > 0)
 			{
-				LOG_DEBUG("Recorded packet", packet_size);
+				//Serial.println(F("Recorded packet"));
 				lora_radio_tx_queue_index.push(packet_size);
 				xTaskNotify(loraTaskHandle, LORA_RADIO_TASK_TX_BIT, eSetBits);
 				packet_size = 0;

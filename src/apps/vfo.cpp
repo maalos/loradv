@@ -12,7 +12,8 @@ void vfoApp()
     {
         tft.fillScreen(DISP_BGCOLOR);
         tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
-
+        tft.setTextSize(1);
+        
         // row 1
         updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "            100%", TFT_GREEN);
         updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "     4.19V", TFT_GREEN);
@@ -35,7 +36,7 @@ void vfoApp()
         updateStringAt(ttf_halfwidth, ttf_halfheight - 40, array, TFT_ORANGE);
 
         updateStringAt(ttf_halfwidth, ttf_halfheight - 40, "CH1", TFT_WHITE);
-        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
+        
         vfoAppInitialized = true;
     }
     newFrequency = getFrequency();
@@ -43,9 +44,10 @@ void vfoApp()
     {
         tft.setTextDatum(MC_DATUM);
         tft.setTextColor(TFT_WHITE);
-        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
+        //tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
+        tft.setTextSize(2);
         tft.drawString(String(newFrequency, 3), ttf_halfwidth, ttf_halfheight);
-        tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24); // reset font
+        tft.setTextSize(1); // reset font
         previousFrequency = newFrequency;
     }
 

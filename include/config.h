@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 // Includes
-#include <DebugLog.h>
 #include <RadioLib.h>
 #include <driver/i2s.h>
 #include <codec2.h>
@@ -11,15 +10,11 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <DejaVu_Sans_Mono_Bold_24.h>
-#include <DejaVu_Sans_Mono_Bold_52.h>
 #include <AiEsp32RotaryEncoder.h>
 #include <Preferences.h>
-#include <map>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
-
-#define DEBUGLOG_DEFAULT_LOG_LEVEL_INFO true
 
 // GPIO 26, 4 free
 
@@ -76,9 +71,19 @@ extern void audioTask(void *param);
 extern void setupAudio();
 
 // preferences.cpp
-extern std::map<const char*, float> settings;
-extern void set_default_settings();
-extern void setup_preferences();
+#define SETTINGS_DIR F("/settings")
+struct Setting {
+    const char *abbreviation;
+    const char *fullKey;
+    float defaultValue;
+};
+extern String getSettingFilePath(const char *abbreviation);
+extern const Setting defaultSettings[];
+extern const char *resolveToAbbreviation(const char *key);
+extern const char *resolveToFullKey(const char *abbreviation);
+
+extern void setDefaultSettings();
+extern void setupPreferences();
 extern void setSetting(const char* key, float value);
 extern float getSetting(const char* key);
 

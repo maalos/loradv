@@ -10,14 +10,14 @@ bool sleep(void *param)
 	radioAction = 0;
 	vTaskDelay(2000 / portTICK_PERIOD_MS);
 	radioAction = 0;
-	LOG_INFO("Entering sleep");
+	Serial.println(F("Entering sleep"));
 	// wake up on ptt button or lora radio incoming data
 	digitalWrite(TFT_BL, LOW);
 	esp_sleep_enable_ext1_wakeup(SLEEP_BITMASK, ESP_EXT1_WAKEUP_ANY_HIGH);
 	delay(100);
 	esp_light_sleep_start();
 	sleepReset();
-	LOG_INFO("Exiting sleep");
+	Serial.println(F("Exiting sleep"));
 	digitalWrite(TFT_BL, HIGH);
 #endif
 	return false;
@@ -27,7 +27,7 @@ bool sleep(void *param)
 void sleepReset()
 {
 #ifdef ENABLE_SLEEP
-	LOG_INFO("Reset sleep");
+	Serial.println(F("Reset sleep"));
 	if (sleepTimerTask != NULL)
 		sleepTimer.cancel(sleepTimerTask);
 	sleepTimerTask = sleepTimer.in(SLEEP_DELAY_MS, sleep);

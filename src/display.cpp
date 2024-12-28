@@ -10,7 +10,31 @@ int16_t ttf_halfheight = ttf_height / 2;
 
 bool appStopSignal = false;
 
-typedef std::pair<const char *, std::function<void()>> appPair_t;
+struct App
+{
+    char id;
+    const char *name;
+    void (*function)();
+};
+
+App appList[] = {
+    {1, "VFO/CH (home)  ", vfoApp},
+    {2, "Settings       ", settingsApp},
+    {3, "LoRaMaps       ", mapsApp},
+    {0, nullptr, nullptr} // end of the list
+};
+
+App getAppById(int id)
+{
+    for (int i = 0; appList[i].id != 0; ++i)
+    {
+        if (appList[i].id == id)
+        {
+            return appList[i];
+        }
+    }
+    return {0, nullptr, nullptr}; // return end of the list if not found
+}
 
 void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor)
 {
@@ -50,56 +74,36 @@ const char *rssiToSValue(short rssi)
 
 const char *c2ToString()
 {
-    if (CODEC2_MODE == CODEC2_MODE_3200)
-        return "3200";
-    if (CODEC2_MODE == CODEC2_MODE_2400)
-        return "2400";
-    if (CODEC2_MODE == CODEC2_MODE_1600)
-        return "1600";
-    if (CODEC2_MODE == CODEC2_MODE_1400)
-        return "1400";
-    if (CODEC2_MODE == CODEC2_MODE_1300)
-        return "1300";
-    if (CODEC2_MODE == CODEC2_MODE_1200)
-        return "1200";
-    if (CODEC2_MODE == CODEC2_MODE_700C)
-        return "700C";
-    return "WHAT";
-}
+    static const char *codec2Modes[] = {
+        "3200", "2400", "1600", "1400", "1300", "1200", nullptr, nullptr, "700C"};
 
-std::map<const char *, std::function<void()>> appMap = {
-    {"VFO/CH (home)  ", vfoApp},
-    {"Settings       ", settingsApp},
-    {"LoRaMaps       ", mapsApp},
-};
-
-appPair_t findAppPairByName(const char *name)
-{
-    auto it = appMap.find(name);
-    if (it != appMap.end())
+    if (CODEC2_MODE >= 0 && CODEC2_MODE <= 8)
     {
-        return *it;
+        return codec2Modes[CODEC2_MODE];
     }
 
-    return appPair_t{"", nullptr};
+    return "WHAT";
 }
 
 char array[18];
 
 void displayTask(void *param)
 {
-    LOG_INFO("Display task started");
+    Serial.println(F("Display task started"));
 
-    appPair_t currentAppPair = findAppPairByName("LoRaMaps       ");
+    App currentApp = getAppById(2);
 
     while (true)
     {
-        currentAppPair.second();
+        if (currentApp.function)
+        {
+            currentApp.function();
+        }
 
         vTaskDelay(250 / portTICK_PERIOD_MS); // update it every 250ms
     }
 
-    LOG_INFO("Display task done");
+    Serial.println(F("Display task done"));
     vTaskDelete(NULL);
 }
 
@@ -110,7 +114,8 @@ void setupDisplay()
     tft.fillScreen(DISP_BGCOLOR);
     tft.setTextDatum(MC_DATUM);
     tft.setTextColor(TFT_WHITE);
-    tft.setFreeFont(&DejaVu_Sans_Mono_Bold_52);
+    tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24);
+    tft.setTextSize(2);
     tft.drawString("loraDV", ttf_halfwidth, ttf_halfheight);
-    tft.setFreeFont(&DejaVu_Sans_Mono_Bold_24); // reset font
+    tft.setTextSize(1);
 }
