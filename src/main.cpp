@@ -17,22 +17,18 @@ void setup()
 	// setup ptt button
 	pinMode(PTTBTN_PIN, INPUT);
 
-	// setup the encoder
-	pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT);
-	pinMode(ROTARY_ENCODER_A_PIN, INPUT);
-	pinMode(ROTARY_ENCODER_B_PIN, INPUT);
-
 	state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
+	//Serial.printf("%f, %f, %f, %f, %f, %f, %f", getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength());
 	if (state != RADIOLIB_ERR_NONE)
 	{
-		Serial.printf("Lora radio start failed: %d", state);
+		Serial.printf("Lora radio start failed: %d\n", state);
 		for (;;)
 		{
 			delay(100);
 		};
 	}
 
-	Serial.println(F("Lora radio initialized"));
+	Serial.println(F("Lora radio initialized\n"));
 	radio.setCRC(LORA_RADIO_CRC);
 	radio.setRfSwitchPins(LORA_RADIO_PIN_RXEN, LORA_RADIO_PIN_TXEN);
 	radio.clearDio1Action();
@@ -45,22 +41,19 @@ void setup()
 	Serial.println(F("Using implicit header"));
 	radio.implicitHeader();
 #endif
-
-	setupDisplay();
+	//setupDisplay();
 
 	//connectToWiFi();
 
-	xTaskCreate(&displayTask, "displayTask", 64000, NULL, 5, &displayTaskHandle);
+	//xTaskCreatePinnedToCore(&displayTask, "displayTask", 32000, NULL, 0, &displayTaskHandle, 0);
 
-	setupAudio();
-	xTaskCreate(&audioTask, "audioTask", 32000, NULL, 5, &audioTaskHandle);	// TODO: lower the stack depth
+	//setupAudio();
+	//xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 10, &audioTaskHandle, 0);	// TODO: lower the stack depth
 
 	setupEncoder();
-	xTaskCreate(&encoderTask, "encoderTask", 32000, NULL, 5, &encoderTaskHandle);	// TODO: lower the stack depth
 
-	xTaskCreate(&loraTask, "loraTask", 8000, NULL, 5, &loraTaskHandle);
-
-	Serial.println(F("Board setup completed"));
+	//xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 10, &loraTaskHandle, 1);
+	//Serial.println(F("Board setup completed"));
 
 #ifdef ENABLE_SLEEP
 	Serial.println(F("Sleep is enabled"));
@@ -70,6 +63,7 @@ void setup()
 
 void loop()
 {
+
 	bool pttState = (analogRead(PTTBTN_PIN) >= 3000);
 
 	if (pttState && !pttPressed)
@@ -86,5 +80,6 @@ void loop()
 		pttPressed = false;
 	}
 	sleepTimer.tick();
+	encoderTask();
 	delay(50);
 }

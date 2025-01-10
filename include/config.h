@@ -10,13 +10,12 @@
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <DejaVu_Sans_Mono_Bold_24.h>
-#include <AiEsp32RotaryEncoder.h>
 #include <Preferences.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
 
-// GPIO 26, 4 free
+// GPIO 26, 0 free
 
 extern SX1262 radio;
 #define SERIAL_BAUD_RATE    9600
@@ -25,11 +24,11 @@ extern volatile bool pttPressed;
 extern volatile char radioAction;
 
 // encoder.cpp
+// GPIOs 34 to 39 are GPIs – input only pins. These pins don’t have internal pull-up or pull-down resistors.
 #define ROTARY_ENCODER_A_PIN 34
 #define ROTARY_ENCODER_B_PIN 39     // VN
 #define ROTARY_ENCODER_BUTTON_PIN   33
-extern TaskHandle_t encoderTaskHandle;
-extern void encoderTask(void *param);
+extern void encoderTask();
 extern void setupEncoder();
 
 // sleep.cpp
@@ -67,6 +66,7 @@ extern int c2_samples_per_frame;
 extern int c2_bytes_per_frame;
 extern int16_t *c2_samples;
 extern uint8_t *c2_bits;
+extern float volume;
 extern void audioTask(void *param);
 extern void setupAudio();
 
@@ -94,21 +94,18 @@ extern float getSetting(const char* key);
 #define LORA_RADIO_QUEUE_LEN    512   // queues length
 // VSPI pin definitions + E220-400M30S labels
 #define LORA_RADIO_PIN_SS   SS  // 5 - NSS 19
-#define SCK_PIN             18  // SCK 18
-#define MISO_PIN            19  // MISO 16
-#define MOSI_PIN            23  // MOSI 17
-#define LORA_RADIO_PIN_A    17  // DIO1 13
-#define LORA_RADIO_PIN_B    35  // BUSY 14
+#define LORA_RADIO_PIN_A    17  // DIO1 13 // RADIOLIB_ERR_TX_TIMEOUT (-5) if unconnected etc.
+#define LORA_RADIO_PIN_B    35  // BUSY 14 (GPI)
 #define LORA_RADIO_PIN_RST  22  // NRST 15
 #define LORA_RADIO_PIN_RXEN 2   // RXEN 6
-#define LORA_RADIO_PIN_TXEN 0   // TXEN 7
+#define LORA_RADIO_PIN_TXEN 4   // TXEN 7 // TODO: add to easyeda new pcb
 // LoRa params
 #define LORA_RADIO_FREQ 434.0   // initial frequency
 #define LORA_RADIO_BW   31.25   // bandwidth in kHz
 #define LORA_RADIO_SF   7       // spreading factor (SF12-10 is too slow for DV)
 #define LORA_RADIO_CR   5       // coding rate denominator
 #define LORA_RADIO_SYNC 8       // sync word
-#define LORA_RADIO_PWR  2       // power in dbm (real is +10db if module has amplifier)
+#define LORA_RADIO_PWR  22       // power in dbm (real is +10db if module has amplifier)
 #define LORA_RADIO_PL   12      // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)

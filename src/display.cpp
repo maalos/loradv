@@ -91,7 +91,7 @@ void displayTask(void *param)
 {
     Serial.println(F("Display task started"));
 
-    App currentApp = getAppById(2);
+    App currentApp = getAppById(1);
 
     while (true)
     {

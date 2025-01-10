@@ -22,7 +22,7 @@ void vfoApp()
         // tft.drawLine(0, ttf_halfheight - 85, ttf_width, ttf_halfheight - 85,    TFT_WHITE);
 
         // row 2
-        sprintf(array, "           %ddBm", LORA_RADIO_PWR + 10); // +10dBm because of the PA
+        sprintf(array, "           %2ddBm", LORA_RADIO_PWR + 10); // +10dBm because of the PA
         updateStringAt(ttf_halfwidth, ttf_halfheight - 70, array, TFT_RED);
 
         sprintf(array, "    %.01fkHz", LORA_RADIO_BW);

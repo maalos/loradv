@@ -67,7 +67,7 @@ void mapsApp()
 
     if (loaded_ok)
     {
-        Serial.printf("Took %dms to download", t);
+        Serial.printf("Took %dms to download\n", t);
     }
 
     t = millis();
@@ -75,7 +75,7 @@ void mapsApp()
     Serial.println(TJpgDec.drawFsJpg(0, 0, "/map.jpg", LittleFS));
 
     t = millis() - t;
-    Serial.printf("Took %dms to draw", t);
+    Serial.printf("Took %dms to draw\n", t);
 
     vTaskDelay(10000 / portTICK_PERIOD_MS);
 }
