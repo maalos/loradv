@@ -3,7 +3,7 @@
 #define ROTARY_ENCODER_STEPS 4
 
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-volatile long encoder0Pos = 0;
+volatile long encoder0Pos = 10;
 long encoderSteps = 4;
 long encoderMinValue = 0;
 long encoderMaxValue = 25;
@@ -35,6 +35,13 @@ void IRAM_ATTR readEncoderISR()
     portEXIT_CRITICAL_ISR(&mux);
 }
 
+volatile bool encoderButtonPressed = false;
+
+void IRAM_ATTR readButtonISR()
+{
+    encoderButtonPressed = analogRead(ROTARY_ENCODER_BUTTON_PIN) == 4095;
+}
+
 void setupEncoder()
 {
     pinMode(ROTARY_ENCODER_A_PIN, INPUT);
@@ -43,22 +50,24 @@ void setupEncoder()
     
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_A_PIN), readEncoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_B_PIN), readEncoderISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_BUTTON_PIN), readButtonISR, CHANGE);
     Serial.println(F("Encoder setup"));
 }
 
 void encoderTask()
 {
     static long lastReadEncoder0Pos = 0;
+    static long lastReadEncoderButtonPress = false;
     currentPos = encoder0Pos / encoderSteps;
+    // add a check for vol mode here
+    volume = encoder0Pos;
 
     if (currentPos != lastReadEncoder0Pos)
     {
-        Serial.printf("Volume: %ld%%\n", currentPos * 4);
+        Serial.printf("Volume: %ld%%\n", encoder0Pos);
         lastReadEncoder0Pos = currentPos;
     }
 
-    if (analogRead(ROTARY_ENCODER_BUTTON_PIN) == 4095)
-    {
-        Serial.println("Button pressed");
-    }
+    if (encoderButtonPressed != lastReadEncoderButtonPress && encoderButtonPressed)
+        Serial.println(F("Encoder button down"));
 }

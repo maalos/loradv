@@ -51,15 +51,15 @@ void vfoApp()
         previousFrequency = newFrequency;
     }
 
-    rssi = radio.getRSSI();
-    snr = radio.getSNR();
-
     switch (radioAction)
     {
     case 2:
         updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "TX ", TFT_RED);
         break;
     case 1:
+        rssi = radio.getRSSI();
+        snr = radio.getSNR();
+
         // row 1
         updateStringAt(ttf_halfwidth, ttf_halfheight - 100, "RX ", TFT_GREEN);
         // row 5

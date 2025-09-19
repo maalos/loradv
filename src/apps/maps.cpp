@@ -5,11 +5,14 @@
 #define WIFI_SSID "bigblackballs"
 #define WIFI_PASS "bigblackballs"
 
-#define MAX_IMAGE_WIDTH 240
 #define FORMAT_LITTLEFS_IF_FAILED true // gotta check preferences.cpp
 
 HTTPClient http;
-String apiUrl = "https://65731956-dd67-4a69-96f8-6a3337a1d780-00-ck5x0o80o03o.riker.replit.dev/smallgmap?maptype=hybrid&lat=50.000000&lon=15.000000&zoom=18";
+String apiUrl = "http://pex.ovh:8080/loramaps?";
+
+String generateApiUrl(double lat, double lon, byte zoom) {
+    return apiUrl + "lat=" + lat + "&lon=" + lon + "&zoom=" + zoom;
+}
 
 bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap)
 {

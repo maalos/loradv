@@ -15,7 +15,7 @@
 #include <HTTPClient.h>
 #include <LittleFS.h>
 
-// GPIO 26, 0 free
+// GPIO 34, 33, 32, 26, 0, 22 free
 
 extern SX1262 radio;
 #define SERIAL_BAUD_RATE    9600
@@ -24,18 +24,18 @@ extern volatile bool pttPressed;
 extern volatile char radioAction;
 
 // encoder.cpp
-// GPIOs 34 to 39 are GPIs – input only pins. These pins don’t have internal pull-up or pull-down resistors.
+// GPIOs 34 to 39 are GPIs – input only pins. These pins don’t have internal pull-up or pull-down resistors. // TODO: move em around
 #define ROTARY_ENCODER_A_PIN 34
-#define ROTARY_ENCODER_B_PIN 39     // VN
+#define ROTARY_ENCODER_B_PIN 32
 #define ROTARY_ENCODER_BUTTON_PIN   33
 extern void encoderTask();
 extern void setupEncoder();
 
 // sleep.cpp
-//#define ENABLE_SLEEP
-#define SLEEP_DELAY_MS  10000  // how long to wait before entering sleep
+// #define ENABLE_SLEEP
+#define SLEEP_DELAY_MS  30000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
-#define SLEEP_BITMASK   PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(LORA_RADIO_PIN_B) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN)
+#define SLEEP_BITMASK   PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(LORA_RADIO_PIN_B)// | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
 extern Timer<1> sleepTimer;
 extern bool sleep(void *param);
 extern void sleepReset();
@@ -48,7 +48,7 @@ extern void onLoraDataAvailableIsr();
 #define AUDIO_SPEAKER_LRC   13
 #define AUDIO_SPEAKER_DIN   25
 // Microphone
-#define AUDIO_MIC_SD    32
+#define AUDIO_MIC_SD    39  // VN
 #define AUDIO_MIC_WS    15
 // Sample rate (don't change)
 #define AUDIO_SAMPLE_RATE   8000
@@ -98,14 +98,14 @@ extern float getSetting(const char* key);
 #define LORA_RADIO_PIN_B    35  // BUSY 14 (GPI)
 #define LORA_RADIO_PIN_RST  22  // NRST 15
 #define LORA_RADIO_PIN_RXEN 2   // RXEN 6
-#define LORA_RADIO_PIN_TXEN 4   // TXEN 7 // TODO: add to easyeda new pcb
+#define LORA_RADIO_PIN_TXEN 4   // TXEN 7
 // LoRa params
 #define LORA_RADIO_FREQ 434.0   // initial frequency
 #define LORA_RADIO_BW   31.25   // bandwidth in kHz
 #define LORA_RADIO_SF   7       // spreading factor (SF12-10 is too slow for DV)
 #define LORA_RADIO_CR   5       // coding rate denominator
 #define LORA_RADIO_SYNC 8       // sync word
-#define LORA_RADIO_PWR  22       // power in dbm (real is +10db if module has amplifier)
+#define LORA_RADIO_PWR  0       // power in dbm (real is +10db if module has amplifier)
 #define LORA_RADIO_PL   12      // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)
@@ -169,11 +169,13 @@ extern void mapsApp();
 /*
 GOOD CONFIGS
 
-700C@20.8:SF7:CR6   best bw
-700C@31.25:SF8:CR5  best rsens // i'd use this 
+700C@7.8:SF5:CR6    best bw if my module supports it lol (rsens -131.6dBm)
+700C@10.4:SF6:CR5   best rsens if my module supports it lol (rsens -132.8dBm)
+700C@20.8:SF7:CR6   best bw (rsens -132.3dBm)
+700C@31.25:SF8:CR5  best rsens (rsens -133.1dBm) // i'd use this 
 700C@41.7:SF8:CR7   best cr
 
-1200@31.25:SF7:CR5  best bw and rsens // i'd use this 
+1200@31.25:SF7:CR5  best bw and rsens (rsens -130.6dBm) // i'd use this 
 1200@125:SF9:CR7    best cr
 
 1600@41.7:SF7:CR5   smallest bw and 2nd best rsens // i'd use this 
