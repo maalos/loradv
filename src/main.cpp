@@ -17,7 +17,8 @@ void setup()
 	// setup ptt button
 	pinMode(PTTBTN_PIN, INPUT);
 
-	state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
+	// state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
+	state = radio.begin(LORA_RADIO_FREQ, LORA_RADIO_BW, LORA_RADIO_SF, LORA_RADIO_CR, LORA_RADIO_SYNC, LORA_RADIO_PWR, LORA_RADIO_PL, 0, false);
 	//Serial.printf("%f, %f, %f, %f, %f, %f, %f", getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength());
 	if (state != RADIOLIB_ERR_NONE)
 	{
@@ -45,12 +46,15 @@ void setup()
 
 	//connectToWiFi();
 
-	xTaskCreatePinnedToCore(&displayTask, "displayTask", 32000, NULL, 0, &displayTaskHandle, 0);
+	// xTaskCreatePinnedToCore(&displayTask, "displayTask", 6000, NULL, 0, &displayTaskHandle, 0);
 
 	setupAudio();
 	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 10, &audioTaskHandle, 0);	// TODO: lower the stack depth
 
-	setupEncoder();
+	// xTaskCreatePinnedToCore(&monitorTask, "monitorTask", 2048, NULL, 5, &monitorTaskHandle, 0);
+
+
+	// setupEncoder();
 
 	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 10, &loraTaskHandle, 1);
 	Serial.println(F("Board setup completed"));
@@ -80,6 +84,6 @@ void loop()
 		pttPressed = false;
 	}
 	sleepTimer.tick();
-	encoderTask();
+	// encoderTask();
 	delay(50);
 }

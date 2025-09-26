@@ -7,7 +7,7 @@ int c2_samples_per_frame; // how many raw samples in one frame
 int c2_bytes_per_frame;	  // how many bytes in encoded frame
 int16_t *c2_samples;	  // buffer for raw samples
 uint8_t *c2_bits;		  // buffer for encoded frame
-float volume = 50;
+float volume = 5;
 
 void adjustGain(int16_t* pcmBuffer, int pcmBufferSize, float gain) {
   for (int i = 0; i < pcmBufferSize; i++)
@@ -24,8 +24,8 @@ void setupAudio()
 		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
 		.communication_format = I2S_COMM_FORMAT_STAND_MSB,
 		.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-		.dma_buf_count = 8, // 2
-		.dma_buf_len = 512, // 32's good for 3200
+		.dma_buf_count = 2 * 4, // 8
+		.dma_buf_len = 192 * 4, // 512
 		.use_apll = 0,
 		.tx_desc_auto_clear = true,
 		.fixed_mclk = -1};
@@ -51,8 +51,8 @@ void setupAudio()
 		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
 		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
 		.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-		.dma_buf_count = 8, // 2
-		.dma_buf_len = 256, // 128
+		.dma_buf_count = 2 * 4, // 8
+		.dma_buf_len = 64 * 4, // 256
 		.use_apll = 0,
 		.tx_desc_auto_clear = true,
 		.fixed_mclk = -1};
@@ -79,6 +79,70 @@ void setupAudio()
 #define AUDIO_MAX_PACKET_SIZE 144
 #endif
 
+typedef struct {
+    float a0, a1, a2, b1, b2;
+    float z1, z2;
+} Biquad;
+
+void biquad_init_highpass(Biquad *f, float sample_rate, float cutoff_hz, float q) {
+    float w0 = 2.0f * M_PI * cutoff_hz / sample_rate;
+    float cosw0 = cosf(w0);
+    float sinw0 = sinf(w0);
+    float alpha = sinw0 / (2.0f * q);
+
+    float b0 = (1 + cosw0) / 2;
+    float b1 = -(1 + cosw0);
+    float b2 = (1 + cosw0) / 2;
+    float a0 = 1 + alpha;
+    float a1 = -2 * cosw0;
+    float a2 = 1 - alpha;
+
+    f->a0 = b0 / a0;
+    f->a1 = b1 / a0;
+    f->a2 = b2 / a0;
+    f->b1 = a1 / a0;
+    f->b2 = a2 / a0;
+
+    f->z1 = f->z2 = 0;
+}
+
+void biquad_init_lowpass(Biquad *f, float sample_rate, float cutoff_hz, float q) {
+    float w0 = 2.0f * M_PI * cutoff_hz / sample_rate;
+    float cosw0 = cosf(w0);
+    float sinw0 = sinf(w0);
+    float alpha = sinw0 / (2.0f * q);
+
+    float b0 = (1 - cosw0) / 2;
+    float b1 = 1 - cosw0;
+    float b2 = (1 - cosw0) / 2;
+    float a0 = 1 + alpha;
+    float a1 = -2 * cosw0;
+    float a2 = 1 - alpha;
+
+    f->a0 = b0 / a0;
+    f->a1 = b1 / a0;
+    f->a2 = b2 / a0;
+    f->b1 = a1 / a0;
+    f->b2 = a2 / a0;
+
+    f->z1 = f->z2 = 0;
+}
+
+inline int16_t biquad_process(Biquad *f, int16_t in) {
+    float out = f->a0 * in + f->a1 * f->z1 + f->a2 * f->z2
+                - f->b1 * f->z1 - f->b2 * f->z2;
+
+    f->z2 = f->z1;
+    f->z1 = out;
+
+    if (out > 32767) out = 32767;
+    else if (out < -32768) out = -32768;
+
+    return (int16_t)out;
+}
+
+Biquad hpf_, lpf;
+
 // audio record/playback encode/decode task
 void audioTask(void *param)
 {
@@ -95,12 +159,15 @@ void audioTask(void *param)
 		}
 	}
 
-	codec2_set_lpc_post_filter(c2, CODEC2_LPC_PF_ENABLE, CODEC2_LPC_PF_BASSBOOST, CODEC2_LPC_PF_BETA, CODEC2_LPC_PF_GAMMA);
+	// codec2_set_lpc_post_filter(c2, CODEC2_LPC_PF_ENABLE, CODEC2_LPC_PF_BASSBOOST, CODEC2_LPC_PF_BETA, CODEC2_LPC_PF_GAMMA);
 	c2_samples_per_frame = codec2_samples_per_frame(c2);
 	c2_bytes_per_frame = codec2_bytes_per_frame(c2);
 	c2_samples = (int16_t *)malloc(sizeof(int16_t) * c2_samples_per_frame);
 	c2_bits = (uint8_t *)malloc(sizeof(uint8_t) * c2_bytes_per_frame);
 	Serial.println(F("C2 initialized"));
+
+	biquad_init_highpass(&hpf_, 8000.0f, 80.0f, 0.707f);
+  	biquad_init_lowpass(&lpf, 8000.0f, 3000.0f, 0.707f);
 
 	// wait for data notification, decode frames and playback
 	size_t bytes_read, bytes_written;
@@ -114,12 +181,12 @@ void audioTask(void *param)
 		// audio rx-decode-playback
 		if (audio_bits & AUDIO_TASK_PLAY_BIT)
 		{
-			Serial.println(F("Playing audio"));
+			// Serial.println(F("Playing audio"));
 			// while rx frames are available and button is not pressed
 			while (!pttPressed && !lora_radio_rx_queue_index.isEmpty())
 			{
 				int packet_size = lora_radio_rx_queue_index.shift();
-				Serial.println(F("Playing packet"));
+				// Serial.println(F("Playing packet"));
 				// split by frame, decode and play
 				for (int i = 0; i < packet_size; i++)
 				{
@@ -127,7 +194,6 @@ void audioTask(void *param)
 					if (i % c2_bytes_per_frame != c2_bytes_per_frame - 1)
 						continue;
 					codec2_decode(c2, c2_samples, c2_bits);
-					adjustGain(c2_samples, c2_samples_per_frame, (volume / 25));
 					i2s_write(I2S_NUM_0, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_written, portMAX_DELAY);
 					vTaskDelay(1);
 				}
@@ -152,6 +218,14 @@ void audioTask(void *param)
 				// read and encode one sample
 				size_t bytes_read;
 				i2s_read(I2S_NUM_1, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_read, portMAX_DELAY);
+
+				// adjustGain(c2_samples, c2_samples_per_frame, 5);
+
+    			for (int i = 0; i < c2_samples_per_frame; i++) {
+				    int16_t s = biquad_process(&hpf_, c2_samples[i]);
+				    c2_samples[i] = biquad_process(&lpf, s);
+				}
+
 				codec2_encode(c2, c2_bits, c2_samples);
 				for (int i = 0; i < c2_bytes_per_frame; i++)
 				{
@@ -171,4 +245,21 @@ void audioTask(void *param)
 			vTaskDelay(1);
 		} // task bit
 	}
+}
+
+TaskHandle_t monitorTaskHandle = NULL;
+
+// Stack monitor task
+void monitorTask(void *pvParameters) {
+    while (true) {
+        if (audioTaskHandle != NULL) {
+            UBaseType_t watermark = uxTaskGetStackHighWaterMark(audioTaskHandle);
+            Serial.printf(
+                "[Stack Monitor] AudioTask min remaining stack: %u words (%u bytes)\n",
+                watermark,
+                watermark * 4
+            );
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000)); // print every 2s
+    }
 }

@@ -69,5 +69,5 @@ void encoderTask()
     }
 
     if (encoderButtonPressed != lastReadEncoderButtonPress && encoderButtonPressed)
-        Serial.println(F("Encoder button down"));
+        Serial.println(F("Encoder button down")); // TODO: fix this
 }

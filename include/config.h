@@ -53,14 +53,15 @@ extern void onLoraDataAvailableIsr();
 // Sample rate (don't change)
 #define AUDIO_SAMPLE_RATE   8000
 // Codec2-related
-#define CODEC2_MODE             CODEC2_MODE_1200
-#define CODEC2_LPC_PF_ENABLE    1   // decent audio quality increase
-#define CODEC2_LPC_PF_BASSBOOST 0   // don't use this
-#define CODEC2_LPC_PF_BETA      0.2 // [0.8] in sh123/loradv, new values are from
-#define CODEC2_LPC_PF_GAMMA     0.5 // [0.2]                  drowe67/codec2/doc/codec2.pdf
+#define CODEC2_MODE             CODEC2_MODE_3200
+#define CODEC2_LPC_PF_ENABLE    0   // decent audio quality increase
+#define CODEC2_LPC_PF_BASSBOOST 0   
+#define CODEC2_LPC_PF_BETA      0.8 // [0.8] in sh123/loradv, new values can be found in
+#define CODEC2_LPC_PF_GAMMA     0.2 // [0.2]                  drowe67/codec2/doc/codec2.pdf
 #define AUDIO_TASK_PLAY_BIT         0x01    // task bit flag to start playback
 #define AUDIO_TASK_RECORD_BIT       0x02    // task bit flag to start recording
 extern TaskHandle_t audioTaskHandle;
+extern TaskHandle_t monitorTaskHandle;
 extern struct CODEC2 *c2;
 extern int c2_samples_per_frame;
 extern int c2_bytes_per_frame;
@@ -68,6 +69,7 @@ extern int16_t *c2_samples;
 extern uint8_t *c2_bits;
 extern float volume;
 extern void audioTask(void *param);
+extern void monitorTask(void *param);
 extern void setupAudio();
 
 // preferences.cpp
@@ -102,11 +104,11 @@ extern float getSetting(const char* key);
 // LoRa params
 #define LORA_RADIO_FREQ 434.0   // initial frequency
 #define LORA_RADIO_BW   31.25   // bandwidth in kHz
-#define LORA_RADIO_SF   7       // spreading factor (SF12-10 is too slow for DV)
+#define LORA_RADIO_SF   5       // spreading factor (SF12-10 is too slow for DV)
 #define LORA_RADIO_CR   5       // coding rate denominator
-#define LORA_RADIO_SYNC 8       // sync word
+#define LORA_RADIO_SYNC 0x12    // sync word
 #define LORA_RADIO_PWR  0       // power in dbm (real is +10db if module has amplifier)
-#define LORA_RADIO_PL   12      // preamble length
+#define LORA_RADIO_PL   8       // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
 #define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)
 extern TaskHandle_t loraTaskHandle;

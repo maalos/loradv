@@ -37,7 +37,7 @@ void loraTask(void *param)
 		uint32_t lora_status_bits = 0;
 		xTaskNotifyWaitIndexed(0, 0x00, ULONG_MAX, &lora_status_bits, portMAX_DELAY);
 
-		Serial.printf("Lora task bits: %d\n", lora_status_bits);
+		// Serial.printf("Lora task bits: %d\n", lora_status_bits);
 
 		// lora rx
 		if (lora_status_bits & LORA_RADIO_TASK_RX_BIT)
@@ -55,7 +55,7 @@ void loraTask(void *param)
 			}
 
 			// process packet
-			Serial.printf("Received packet, size: %d\n", packet_size);
+			// Serial.printf("Received packet, size: %d\n", packet_size);
 			if (packet_size % c2_bytes_per_frame != 0)
 			{
 				Serial.printf("Audio packet of wrong size, expected mod %d\n", c2_bytes_per_frame);
