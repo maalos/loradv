@@ -74,6 +74,8 @@ void loop()
 		Serial.println(F("PTT pushed, start TX"));
 		pttPressed = true;
 
+		resetAGC();
+
 		// notify to start recording
 		xTaskNotify(audioTaskHandle, AUDIO_TASK_RECORD_BIT, eSetBits);
 	}

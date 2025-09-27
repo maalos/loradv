@@ -71,6 +71,7 @@ extern float volume;
 extern void audioTask(void *param);
 extern void monitorTask(void *param);
 extern void setupAudio();
+extern void resetAGC();
 
 // preferences.cpp
 #define SETTINGS_DIR F("/settings")
