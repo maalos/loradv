@@ -32,10 +32,10 @@ extern void encoderTask();
 extern void setupEncoder();
 
 // sleep.cpp
-// #define ENABLE_SLEEP
-#define SLEEP_DELAY_MS  30000  // how long to wait before entering sleep
+#define ENABLE_SLEEP
+#define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
-#define SLEEP_BITMASK   PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(LORA_RADIO_PIN_B)// | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
+#define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
 extern Timer<1> sleepTimer;
 extern bool sleep(void *param);
 extern void sleepReset();
@@ -54,10 +54,10 @@ extern void onLoraDataAvailableIsr();
 #define AUDIO_SAMPLE_RATE   8000
 // Codec2-related
 #define CODEC2_MODE             CODEC2_MODE_3200
-#define CODEC2_LPC_PF_ENABLE    0   // decent audio quality increase
-#define CODEC2_LPC_PF_BASSBOOST 0   
-#define CODEC2_LPC_PF_BETA      0.8 // [0.8] in sh123/loradv, new values can be found in
-#define CODEC2_LPC_PF_GAMMA     0.2 // [0.2]                  drowe67/codec2/doc/codec2.pdf
+#define CODEC2_LPC_PF_ENABLE    1   // decent audio quality increase
+#define CODEC2_LPC_PF_BASSBOOST 0
+#define CODEC2_LPC_PF_BETA      0.2 // [0.8] in sh123/loradv, new values can be found in
+#define CODEC2_LPC_PF_GAMMA     0.5 // [0.2]                  drowe67/codec2/doc/codec2.pdf
 #define AUDIO_TASK_PLAY_BIT         0x01    // task bit flag to start playback
 #define AUDIO_TASK_RECORD_BIT       0x02    // task bit flag to start recording
 extern TaskHandle_t audioTaskHandle;

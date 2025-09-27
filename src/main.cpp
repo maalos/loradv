@@ -15,7 +15,7 @@ void setup()
 	setupPreferences();
 
 	// setup ptt button
-	pinMode(PTTBTN_PIN, INPUT);
+	pinMode(PTTBTN_PIN, INPUT_PULLDOWN);
 
 	// state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
 	state = radio.begin(LORA_RADIO_FREQ, LORA_RADIO_BW, LORA_RADIO_SF, LORA_RADIO_CR, LORA_RADIO_SYNC, LORA_RADIO_PWR, LORA_RADIO_PL, 0, false);
@@ -67,8 +67,7 @@ void setup()
 
 void loop()
 {
-
-	bool pttState = (analogRead(PTTBTN_PIN) >= 3000);
+	bool pttState = (analogRead(PTTBTN_PIN) >= 4000);
 
 	if (pttState && !pttPressed)
 	{
