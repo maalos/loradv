@@ -25,7 +25,7 @@ void loraTask(void *param)
 {
 	Serial.println(F("Lora task started"));
 
-	state = radio.startReceive();
+	state = radio.startReceiveDutyCycleAuto(LORA_RADIO_PL);
 	if (state != RADIOLIB_ERR_NONE)
 	{
 		Serial.printf("Receive start error: %d\n", state);
@@ -71,11 +71,11 @@ void loraTask(void *param)
 			xTaskNotify(audioTaskHandle, AUDIO_TASK_PLAY_BIT, eSetBits);
 
 			// probably not needed, still in receive
-			state = radio.startReceive();
-			if (state != RADIOLIB_ERR_NONE)
-			{
-				Serial.printf("Start receive error: %d\n", state);
-			}
+			// state = radio.startReceiveDutyCycleAuto(LORA_RADIO_PL);
+			// if (state != RADIOLIB_ERR_NONE)
+			// {
+				// Serial.printf("Start receive error: %d\n", state);
+			// }
 			sleepReset();
 		} // lora rx
 		// lora tx data
@@ -108,7 +108,7 @@ void loraTask(void *param)
 			radioAction = 0;
 
 			// switch to receive after all transmitted
-			state = radio.startReceive();
+			state = radio.startReceiveDutyCycleAuto(LORA_RADIO_PL);
 			if (state != RADIOLIB_ERR_NONE)
 			{
 				Serial.printf("Start receive error: %d\n", state);
