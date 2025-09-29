@@ -8,7 +8,7 @@ void setup()
 	while (!Serial)
 		;
 
-	delay(1000); // wait for platformio's serialmon window change
+	// delay(1000); // wait for platformio's serialmon window change // actually, i don't care
 
 	Serial.println(F("Board setup started"));
 
@@ -16,6 +16,7 @@ void setup()
 
 	// setup ptt button
 	pinMode(PTTBTN_PIN, INPUT_PULLDOWN);
+	pinMode(LORA_RADIO_PIN_B, INPUT_PULLDOWN);
 
 	// state = radio.begin(getFrequency(), getBandwidth(), getSpreadingFactor(), getCodingRate(), getSyncWord(), getOutputPower(), getPreambleLength(), 0, false);
 	state = radio.begin(LORA_RADIO_FREQ, LORA_RADIO_BW, LORA_RADIO_SF, LORA_RADIO_CR, LORA_RADIO_SYNC, LORA_RADIO_PWR, LORA_RADIO_PL, 0, false);
@@ -61,8 +62,20 @@ void setup()
 
 #ifdef ENABLE_SLEEP
 	Serial.println(F("Sleep is enabled"));
+	// Create a one-shot FreeRTOS timer
+    sleepTimer = xTimerCreate(
+        "SleepTimer",                         // name
+        pdMS_TO_TICKS(SLEEP_DELAY_MS),        // period
+        pdFALSE,                              // one-shot
+        (void*)0,                             // ID
+        sleepCallback                         // callback
+    );
+    if (sleepTimer == NULL) {
+        Serial.println("Failed to create sleep timer!");
+    }
+
 #endif
-	sleepReset();
+	sleepReset("Board setup completed");
 }
 
 void loop()
@@ -84,7 +97,7 @@ void loop()
 		Serial.println(F("PTT released"));
 		pttPressed = false;
 	}
-	sleepTimer.tick();
+	// sleepTimer.tick();
 	// encoderTask();
 	delay(50);
 }

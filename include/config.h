@@ -6,7 +6,6 @@
 #include <driver/i2s.h>
 #include <codec2.h>
 #include <CircularBuffer.hpp>
-#include <arduino-timer.h>
 #include <TFT_eSPI.h>
 #include <SPI.h>
 #include <DejaVu_Sans_Mono_Bold_24.h>
@@ -14,11 +13,14 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <LittleFS.h>
+#include "esp32/rom/rtc.h"
+#include "driver/rtc_io.h"
+
 
 // GPIO 34, 33, 32, 26, 0, 22 free
 
 extern SX1262 radio;
-#define SERIAL_BAUD_RATE    9600
+#define SERIAL_BAUD_RATE    115200
 #define PTTBTN_PIN      36 // VP
 extern volatile bool pttPressed;
 extern volatile char radioAction;
@@ -36,9 +38,9 @@ extern void setupEncoder();
 #define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
 #define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
-extern Timer<1> sleepTimer;
-extern bool sleep(void *param);
-extern void sleepReset();
+extern TimerHandle_t sleepTimer;
+extern void sleepCallback(TimerHandle_t xTimer);
+extern void sleepReset(String reason);
 extern void onLoraDataAvailableIsr();
 
 // audio.cpp
@@ -98,7 +100,7 @@ extern float getSetting(const char* key);
 // VSPI pin definitions + E220-400M30S labels
 #define LORA_RADIO_PIN_SS   SS  // 5 - NSS 19
 #define LORA_RADIO_PIN_A    17  // DIO1 13 // RADIOLIB_ERR_TX_TIMEOUT (-5) if unconnected etc.
-#define LORA_RADIO_PIN_B    35  // BUSY 14 (GPI)
+#define LORA_RADIO_PIN_B    35  // BUSY 14
 #define LORA_RADIO_PIN_RST  22  // NRST 15
 #define LORA_RADIO_PIN_RXEN 2   // RXEN 6
 #define LORA_RADIO_PIN_TXEN 4   // TXEN 7

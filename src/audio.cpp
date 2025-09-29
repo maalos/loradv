@@ -22,10 +22,10 @@ void setupAudio()
 		.sample_rate = AUDIO_SAMPLE_RATE,
 		.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
 		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-		.communication_format = I2S_COMM_FORMAT_STAND_MSB,
+		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
 		.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-		.dma_buf_count = 2 * 4, // 8
-		.dma_buf_len = 192 * 4, // 512
+		.dma_buf_count = 2 * 2, // 8
+		.dma_buf_len = 192 * 2, // 512
 		.use_apll = 0,
 		.tx_desc_auto_clear = true,
 		.fixed_mclk = -1};
@@ -51,8 +51,8 @@ void setupAudio()
 		.channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
 		.communication_format = I2S_COMM_FORMAT_STAND_I2S,
 		.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-		.dma_buf_count = 2 * 4, // 8
-		.dma_buf_len = 64 * 4, // 256
+		.dma_buf_count = 2 * 2, // 8
+		.dma_buf_len = 64 * 2, // 256
 		.use_apll = 0,
 		.tx_desc_auto_clear = true,
 		.fixed_mclk = -1};
@@ -76,7 +76,7 @@ void setupAudio()
 #elif CODEC2_MODE == CODEC2_MODE_1200 || CODEC2_MODE == CODEC2_MODE_1300 || CODEC2_MODE == CODEC2_MODE_1400 || CODEC2_MODE == CODEC2_MODE_1600 || CODEC2_MODE == CODEC2_MODE_2400
 #define AUDIO_MAX_PACKET_SIZE 96
 #elif CODEC2_MODE == CODEC2_MODE_3200
-#define AUDIO_MAX_PACKET_SIZE 144
+#define AUDIO_MAX_PACKET_SIZE 240
 #endif
 
 typedef struct {
@@ -106,28 +106,6 @@ void biquad_init_highpass(Biquad *f, float sample_rate, float cutoff_hz, float q
     f->z1 = f->z2 = 0;
 }
 
-void biquad_init_lowpass(Biquad *f, float sample_rate, float cutoff_hz, float q) {
-    float w0 = 2.0f * M_PI * cutoff_hz / sample_rate;
-    float cosw0 = cosf(w0);
-    float sinw0 = sinf(w0);
-    float alpha = sinw0 / (2.0f * q);
-
-    float b0 = (1 - cosw0) / 2;
-    float b1 = 1 - cosw0;
-    float b2 = (1 - cosw0) / 2;
-    float a0 = 1 + alpha;
-    float a1 = -2 * cosw0;
-    float a2 = 1 - alpha;
-
-    f->a0 = b0 / a0;
-    f->a1 = b1 / a0;
-    f->a2 = b2 / a0;
-    f->b1 = a1 / a0;
-    f->b2 = a2 / a0;
-
-    f->z1 = f->z2 = 0;
-}
-
 inline int16_t biquad_process(Biquad *f, int16_t in) {
     float out = f->a0 * in + f->a1 * f->z1 + f->a2 * f->z2
                 - f->b1 * f->z1 - f->b2 * f->z2;
@@ -141,43 +119,42 @@ inline int16_t biquad_process(Biquad *f, int16_t in) {
     return (int16_t)out;
 }
 
-Biquad hpf_, lpf;
+Biquad hpf_;
 
 static float initial_agc_gain = 5.0f;         // initial gain
 static float agc_gain = initial_agc_gain;     // current gain
-static const float target_rms = 20; // target RMS
-static const float attack = 0.1f;   // how fast to increase gain
-static const float release = 0.01f; // how fast to decrease gain
-
-void resetAGC() {
-	agc_gain = initial_agc_gain;
-}
+static const float target_rms = 1200; // target RMS
+static const float attack = 0.9f;   // how fast to increase gain
+static const float release = 0.1f; // how fast to decrease gain
+static const float max_gain = 20.0f;
 
 void autoGain(int16_t *samples, int n) {
-    // 1. Measure RMS of frame
     double sum = 0;
     for (int i = 0; i < n; i++) {
         sum += samples[i] * samples[i];
     }
     float rms = sqrtf(sum / n);
+    if (rms < 1e-3f) rms = 1e-3f;
 
-    if (rms > 1.0f) {
-        float desired_gain = target_rms / rms;
+    float desired_gain = target_rms / rms;
 
-        // 2. Smoothly adjust gain (attack/release)
-        if (desired_gain < agc_gain)
-            agc_gain = agc_gain * (1.0f - release) + desired_gain * release;
-        else
-            agc_gain = agc_gain * (1.0f - attack) + desired_gain * attack;
+    if (desired_gain < agc_gain) {
+        agc_gain = agc_gain * (1.0f - attack) + desired_gain * attack;
+    } else {
+        if (agc_gain < max_gain)
+          agc_gain = agc_gain * (1.0f - release) + desired_gain * release;
     }
 
-    // 3. Apply gain
     for (int i = 0; i < n; i++) {
         float s = samples[i] * agc_gain;
         if (s > 32767) s = 32767;
         if (s < -32768) s = -32768;
         samples[i] = (int16_t)s;
     }
+}
+
+void resetAGC() {
+	agc_gain = initial_agc_gain;
 }
 
 // audio record/playback encode/decode task
@@ -196,15 +173,14 @@ void audioTask(void *param)
 		}
 	}
 
-	codec2_set_lpc_post_filter(c2, CODEC2_LPC_PF_ENABLE, CODEC2_LPC_PF_BASSBOOST, CODEC2_LPC_PF_BETA, CODEC2_LPC_PF_GAMMA);
+	codec2_set_lpc_post_filter(c2, CODEC2_LPC_PF_ENABLE, CODEC2_LPC_PF_BASSBOOST, CODEC2_LPC_PF_BETA, CODEC2_LPC_PF_GAMMA); // przydaloby sie tu jeszcze cos poszponcic przy tym
 	c2_samples_per_frame = codec2_samples_per_frame(c2);
 	c2_bytes_per_frame = codec2_bytes_per_frame(c2);
 	c2_samples = (int16_t *)malloc(sizeof(int16_t) * c2_samples_per_frame);
 	c2_bits = (uint8_t *)malloc(sizeof(uint8_t) * c2_bytes_per_frame);
 	Serial.println(F("C2 initialized"));
 
-	biquad_init_highpass(&hpf_, 8000.0f, 30.0f, 0.707f);
-  	// biquad_init_lowpass(&lpf, 8000.0f, 3000.0f, 0.707f);
+	biquad_init_highpass(&hpf_, 8000.0f, 240.0f, 0.707f);
 
 	// wait for data notification, decode frames and playback
 	size_t bytes_read, bytes_written;
@@ -230,17 +206,9 @@ void audioTask(void *param)
 					c2_bits[i % c2_bytes_per_frame] = lora_radio_rx_queue.shift();
 					if (i % c2_bytes_per_frame != c2_bytes_per_frame - 1)
 						continue;
+
 					codec2_decode(c2, c2_samples, c2_bits);
-
-					/*
-					for (int i = 0; i < c2_samples_per_frame; i++) {
-    				  int16_t s = c2_samples[i];
-    				  s = biquad_process(&hpf_, s);  // high-pass
-    				  s = biquad_process(&lpf, s);  // low-pass
-    				  c2_samples[i] = s;
-    				}
-					*/
-
+					
 					i2s_write(I2S_NUM_0, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_written, portMAX_DELAY);
 					vTaskDelay(1);
 				}
@@ -265,18 +233,14 @@ void audioTask(void *param)
 				// read and encode one sample
 				size_t bytes_read;
 				i2s_read(I2S_NUM_1, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_read, portMAX_DELAY);
-
-				// autoGain(c2_samples, c2_samples_per_frame);
-
-
+				
+				autoGain(c2_samples, c2_samples_per_frame);
     			for (int i = 0; i < c2_samples_per_frame; i++) {
-				    int16_t s = c2_samples[i];
-					s = biquad_process(&hpf_, s);
-					// s = biquad_process(&lpf, s);
-				    c2_samples[i] = s;
+					c2_samples[i] = biquad_process(&hpf_, c2_samples[i]);
 				}
 
 				codec2_encode(c2, c2_bits, c2_samples);
+
 				for (int i = 0; i < c2_bytes_per_frame; i++)
 				{
 					lora_radio_tx_queue.push(c2_bits[i]);

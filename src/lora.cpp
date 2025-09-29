@@ -16,8 +16,6 @@ byte lora_radio_tx_buf[LORA_RADIO_BUF_LEN]; // rx packet buffer
 volatile bool lora_enable_isr = true; // true to enable rx isr, disabled on tx
 volatile bool pttPressed = false;
 
-unsigned long lastI2STime = 0;
-
 int state;
 
 // lora trasmit receive task
@@ -76,7 +74,7 @@ void loraTask(void *param)
 			// {
 				// Serial.printf("Start receive error: %d\n", state);
 			// }
-			sleepReset();
+			sleepReset("LoRa RX");
 		} // lora rx
 		// lora tx data
 		else if (lora_status_bits & LORA_RADIO_TASK_TX_BIT)
@@ -100,7 +98,6 @@ void loraTask(void *param)
 					Serial.printf("Lora radio transmit failed: %d\n", state);
 					continue;
 				}
-				sleepReset();
 
 				Serial.printf("Transmitted packet: %d bytes\n", tx_bytes_cnt);
 				vTaskDelay(1);
@@ -114,7 +111,7 @@ void loraTask(void *param)
 				Serial.printf("Start receive error: %d\n", state);
 			}
 			lora_enable_isr = true;
-			sleepReset();
+			sleepReset("LoRa TX");
 		} // lora tx
 	} // task loop
 }
