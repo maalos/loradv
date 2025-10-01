@@ -1,11 +1,43 @@
 #include <config.h>
 
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-volatile long encoder0Pos = 10;
+volatile long encoder0Pos = 25;
 long encoderSteps = 1;
 long encoderMinValue = 0;
 long encoderMaxValue = 100;
 volatile bool encoderButtonPressed = false;
+volatile bool encoderMoved = true;
+
+const int SLEEP_HOLD_TIME = 2000; // 3s
+unsigned long buttonPressStart = 0;
+bool buttonHeld = false;
+
+void checkButtonHold()
+{
+    int state = digitalRead(ROTARY_ENCODER_BUTTON_PIN);
+
+    if (state == HIGH) {
+        if (buttonPressStart == 0) {
+            buttonPressStart = millis();
+        }
+        if (!buttonHeld && (millis() - buttonPressStart > SLEEP_HOLD_TIME)) {
+            buttonHeld = true;
+            Serial.println("Going to deep sleep");
+            
+            radio.sleep(true);
+            digitalWrite(DISPLAY_BACKLIGHT_PIN, 0);
+
+            delay(SLEEP_HOLD_TIME); // time to let go off the button
+
+            esp_sleep_enable_ext0_wakeup((gpio_num_t)ROTARY_ENCODER_BUTTON_PIN, 1);
+            esp_deep_sleep_start();
+        }
+    } else {
+        buttonPressStart = 0;
+        buttonHeld = false;
+    }
+}
+
 
 void IRAM_ATTR readEncoderISR()
 {
@@ -23,16 +55,22 @@ void IRAM_ATTR readEncoderISR()
     if (encoder0Pos < encoderMinValue * encoderSteps) encoder0Pos = encoderMinValue * encoderSteps;
     if (encoder0Pos > encoderMaxValue * encoderSteps) encoder0Pos = encoderMaxValue * encoderSteps;
 
-    Serial.printf("Volume: %ld%%\n", encoder0Pos);
+    encoderMoved = true;
 
     portEXIT_CRITICAL_ISR(&mux);
 }
 
-
 void IRAM_ATTR readButtonISR()
 {
-    Serial.println(F("Encoder button down"));
-    encoderButtonPressed = digitalRead(ROTARY_ENCODER_BUTTON_PIN);
+    static unsigned long lastInterruptTime = 0;
+    unsigned long interruptTime = millis();
+
+    if (interruptTime - lastInterruptTime > 50) { // 50ms debounce
+        encoderButtonPressed = (digitalRead(ROTARY_ENCODER_BUTTON_PIN) == HIGH);
+        Serial.println(encoderButtonPressed ? F("Encoder button down") : F("Encoder button up"));
+    }
+
+    lastInterruptTime = interruptTime;
 }
 
 void setupEncoder()

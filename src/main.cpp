@@ -5,12 +5,12 @@ volatile char radioAction = 0; // 0 - listening, 1 - receiving, 2 - transmitting
 void setup()
 {
 	Serial.begin(SERIAL_BAUD_RATE);
-	while (!Serial)
-		;
-
-	// delay(1000); // wait for platformio's serialmon window change // actually, i don't care
 
 	Serial.println(F("Board setup started"));
+
+	if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_UNDEFINED) {
+        Serial.println("Woke up from deep sleep");
+    }
 
 	setupPreferences();
 
@@ -71,8 +71,19 @@ void setup()
 	sleepReset("Board setup completed");
 }
 
+extern void checkButtonHold();
+extern volatile bool encoderMoved;
+extern volatile long encoder0Pos;
+
 void loop()
 {
+	checkButtonHold();
+
+	if (encoderMoved) {
+    	Serial.printf("Volume: %ld%%\n", encoder0Pos);
+		encoderMoved = false;
+	}
+
 	bool pttState = digitalRead(PTTBTN_PIN);
 
 	if (pttState && !pttPressed)
@@ -90,6 +101,6 @@ void loop()
 		Serial.println(F("PTT released"));
 		pttPressed = false;
 	}
-	// sleepTimer.tick();
+
 	delay(100);
 }
