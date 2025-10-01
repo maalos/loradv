@@ -36,13 +36,7 @@ void setup()
 	radio.clearDio1Action();
 	radio.setDio1Action(onLoraDataAvailableIsr);
 	// radio.setRxBoostedGainMode(true, true); // power saving
-#ifdef LORA_RADIO_EXPL
-	Serial.println(F("Using explicit header"));
 	radio.explicitHeader();
-#else
-	Serial.println(F("Using implicit header"));
-	radio.implicitHeader();
-#endif
 	setupDisplay();
 
 	//connectToWiFi();

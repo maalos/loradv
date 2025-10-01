@@ -115,7 +115,6 @@ extern float getSetting(const char* key);
 #define LORA_RADIO_PWR  0       // power in dbm (real is +10db if module has amplifier)
 #define LORA_RADIO_PL   8       // preamble length
 #define LORA_RADIO_CRC  1       // length of the CRC in bytes
-#define LORA_RADIO_EXPL         // comment out to use implicit mode (for spreading factor 6)
 extern TaskHandle_t loraTaskHandle;
 extern int state;
 extern void loraTask(void *param);
