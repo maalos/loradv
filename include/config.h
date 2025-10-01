@@ -17,7 +17,7 @@
 #include "driver/rtc_io.h"
 
 
-// GPIO 34, 33, 32, 26, 0, 22 free
+// GPIO 0 free, dont use
 
 extern SX1262 radio;
 #define SERIAL_BAUD_RATE    115200
@@ -25,16 +25,18 @@ extern SX1262 radio;
 extern volatile bool pttPressed;
 extern volatile char radioAction;
 
+#define BAT_VOL_PIN 34
+
 // encoder.cpp
 // GPIOs 34 to 39 are GPIs – input only pins. These pins don’t have internal pull-up or pull-down resistors. // TODO: move em around
-#define ROTARY_ENCODER_A_PIN 34
-#define ROTARY_ENCODER_B_PIN 32
-#define ROTARY_ENCODER_BUTTON_PIN   33
+#define ROTARY_ENCODER_A_PIN 32
+#define ROTARY_ENCODER_B_PIN 33
+#define ROTARY_ENCODER_BUTTON_PIN   26
 extern void encoderTask();
 extern void setupEncoder();
 
 // sleep.cpp
-#define ENABLE_SLEEP
+// #define ENABLE_SLEEP
 #define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
 #define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
@@ -58,8 +60,8 @@ extern void onLoraDataAvailableIsr();
 #define CODEC2_MODE             CODEC2_MODE_3200
 #define CODEC2_LPC_PF_ENABLE    1   // decent audio quality increase
 #define CODEC2_LPC_PF_BASSBOOST 0
-#define CODEC2_LPC_PF_BETA      0.2 // [0.8] in sh123/loradv, new values can be found in
-#define CODEC2_LPC_PF_GAMMA     0.5 // [0.2]                  drowe67/codec2/doc/codec2.pdf
+#define CODEC2_LPC_PF_BETA      0.8 // [0.8] in sh123/loradv, new values can be found in
+#define CODEC2_LPC_PF_GAMMA     0.2 // [0.2]                  drowe67/codec2/doc/codec2.pdf
 #define AUDIO_TASK_PLAY_BIT         0x01    // task bit flag to start playback
 #define AUDIO_TASK_RECORD_BIT       0x02    // task bit flag to start recording
 extern TaskHandle_t audioTaskHandle;

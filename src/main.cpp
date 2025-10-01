@@ -35,7 +35,7 @@ void setup()
 	radio.setRfSwitchPins(LORA_RADIO_PIN_RXEN, LORA_RADIO_PIN_TXEN);
 	radio.clearDio1Action();
 	radio.setDio1Action(onLoraDataAvailableIsr);
-	// radio.setRxBoostedGainMode(true, true);
+	// radio.setRxBoostedGainMode(true, true); // power saving
 #ifdef LORA_RADIO_EXPL
 	Serial.println(F("Using explicit header"));
 	radio.explicitHeader();
@@ -55,14 +55,13 @@ void setup()
 	// xTaskCreatePinnedToCore(&monitorTask, "monitorTask", 2048, NULL, 5, &monitorTaskHandle, 0);
 
 
-	// setupEncoder();
+	setupEncoder();
 
 	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 10, &loraTaskHandle, 1);
 	Serial.println(F("Board setup completed"));
 
 #ifdef ENABLE_SLEEP
 	Serial.println(F("Sleep is enabled"));
-	// Create a one-shot FreeRTOS timer
     sleepTimer = xTimerCreate(
         "SleepTimer",                         // name
         pdMS_TO_TICKS(SLEEP_DELAY_MS),        // period
@@ -80,7 +79,7 @@ void setup()
 
 void loop()
 {
-	bool pttState = (analogRead(PTTBTN_PIN) >= 4000);
+	bool pttState = digitalRead(PTTBTN_PIN);
 
 	if (pttState && !pttPressed)
 	{
@@ -98,6 +97,5 @@ void loop()
 		pttPressed = false;
 	}
 	// sleepTimer.tick();
-	// encoderTask();
-	delay(50);
+	delay(100);
 }

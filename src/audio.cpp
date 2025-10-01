@@ -8,6 +8,7 @@ int c2_bytes_per_frame;	  // how many bytes in encoded frame
 int16_t *c2_samples;	  // buffer for raw samples
 uint8_t *c2_bits;		  // buffer for encoded frame
 float volume = 5;
+extern volatile long encoder0Pos;
 
 void adjustGain(int16_t* pcmBuffer, int pcmBufferSize, float gain) {
   for (int i = 0; i < pcmBufferSize; i++)
@@ -208,6 +209,8 @@ void audioTask(void *param)
 						continue;
 
 					codec2_decode(c2, c2_samples, c2_bits);
+
+					adjustGain(c2_samples, c2_samples_per_frame, encoder0Pos / 4);
 					
 					i2s_write(I2S_NUM_0, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_written, portMAX_DELAY);
 					vTaskDelay(1);
