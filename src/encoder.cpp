@@ -25,7 +25,12 @@ void checkButtonHold()
             Serial.println("Going to deep sleep");
             
             radio.sleep(true);
+
             digitalWrite(DISPLAY_BACKLIGHT_PIN, 0);
+            // https://www.reddit.com/r/esp32/comments/movnp3/comment/hlad7wh/
+            tft.writecommand(ST7789_DISPOFF);
+            delay(100);
+            tft.writecommand(ST7789_SLPIN);
 
             delay(SLEEP_HOLD_TIME); // time to let go off the button
 
@@ -65,9 +70,10 @@ void IRAM_ATTR readButtonISR()
     static unsigned long lastInterruptTime = 0;
     unsigned long interruptTime = millis();
 
-    if (interruptTime - lastInterruptTime > 50) { // 50ms debounce
-        encoderButtonPressed = (digitalRead(ROTARY_ENCODER_BUTTON_PIN) == HIGH);
-        Serial.println(encoderButtonPressed ? F("Encoder button down") : F("Encoder button up"));
+    if (interruptTime - lastInterruptTime > 100) {
+        encoderButtonPressed = digitalRead(ROTARY_ENCODER_BUTTON_PIN);
+        Serial.println("Encoder button down");
+        sleepReset("Encoder button down");
     }
 
     lastInterruptTime = interruptTime;
@@ -81,6 +87,6 @@ void setupEncoder()
     
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_A_PIN), readEncoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_B_PIN), readEncoderISR, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_BUTTON_PIN), readButtonISR, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_BUTTON_PIN), readButtonISR, RISING);
     Serial.println(F("Encoder setup"));
 }

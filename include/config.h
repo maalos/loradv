@@ -36,10 +36,10 @@ extern void encoderTask();
 extern void setupEncoder();
 
 // sleep.cpp
-// #define ENABLE_SLEEP
-#define SLEEP_DELAY_MS  5000  // how long to wait before entering sleep
+#define ENABLE_SLEEP
+#define SLEEP_DELAY_MS  15000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
-#define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // commented out until pulldown resistors get added or smth
+#define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) // commented out until pulldown resistors get added or smth
 extern TimerHandle_t sleepTimer;
 extern void sleepCallback(TimerHandle_t xTimer);
 extern void sleepReset(String reason);

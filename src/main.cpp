@@ -81,6 +81,7 @@ void loop()
 
 	if (encoderMoved) {
     	Serial.printf("Volume: %ld%%\n", encoder0Pos);
+		sleepReset("Volume knob");
 		encoderMoved = false;
 	}
 
