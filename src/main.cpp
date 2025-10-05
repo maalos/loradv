@@ -45,9 +45,9 @@ void setup()
 
 	setupAudio();
 	// Create tone generation task
-	// xTaskCreatePinnedToCore(toneTask, "toneTask", 2048, NULL, 10, &toneTaskHandle, 0);
-	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 0, &audioTaskHandle, 0);	// TODO: lower the stack depth
-	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 0, &loraTaskHandle, 1);
+	xTaskCreatePinnedToCore(toneTask, "toneTask", 2048, NULL, 0, &toneTaskHandle, 0);
+	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 10, &audioTaskHandle, 0);	// TODO: lower the stack depth
+	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 10, &loraTaskHandle, 1);
 	// xTaskCreatePinnedToCore(&monitorTask, "monitorTask", 2048, NULL, 5, &monitorTaskHandle, 0);
 
 
@@ -88,6 +88,9 @@ void loop()
 
 	if (pttState && !pttPressed)
 	{
+		startTone(780);
+		delay(50);
+		stopTone();
 		Serial.println(F("PTT pushed, start TX"));
 		pttPressed = true;
 
@@ -100,6 +103,9 @@ void loop()
 	{
 		Serial.println(F("PTT released"));
 		pttPressed = false;
+		startTone(520);
+		delay(50);
+		stopTone();
 	}
 
 	delay(100);

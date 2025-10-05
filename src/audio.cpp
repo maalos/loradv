@@ -299,7 +299,7 @@ void stopTone() {
     tonePlaying = false;
 }
 
-// tone palette: 520Hz 780Hz 780Hz
+// tone palette: 520Hz 650Hz 780Hz
 
 void toneTask(void *param) {
     const int bufferSize = 256;    // samples per buffer
