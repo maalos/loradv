@@ -7,8 +7,7 @@ int c2_samples_per_frame; // how many raw samples in one frame
 int c2_bytes_per_frame;	  // how many bytes in encoded frame
 int16_t *c2_samples;	  // buffer for raw samples
 uint8_t *c2_bits;		  // buffer for encoded frame
-float volume = 5;
-extern volatile long encoder0Pos;
+float volume = 25;
 
 void adjustGain(int16_t* pcmBuffer, int pcmBufferSize, float gain) {
   for (int i = 0; i < pcmBufferSize; i++)
@@ -212,6 +211,8 @@ void audioTask(void *param)
 
 					adjustGain(c2_samples, c2_samples_per_frame, encoder0Pos / 4);
 					
+					stopTone();
+					
 					i2s_write(I2S_NUM_0, c2_samples, sizeof(uint16_t) * c2_samples_per_frame, &bytes_written, portMAX_DELAY);
 					vTaskDelay(1);
 				}
@@ -280,3 +281,43 @@ void monitorTask(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(2000)); // print every 2s
     }
 }
+
+// tone generation
+volatile bool tonePlaying = false;
+float tonePhase = 0.0f;
+float tonePhaseInc = 0.0f;
+
+TaskHandle_t toneTaskHandle = NULL;
+
+void startTone(float freq) {
+    tonePhase = 0;
+    tonePhaseInc = 2.0f * M_PI * freq / AUDIO_SAMPLE_RATE;
+    tonePlaying = true;
+}
+
+void stopTone() {
+    tonePlaying = false;
+}
+
+// tone palette: 520Hz 780Hz 780Hz
+
+void toneTask(void *param) {
+    const int bufferSize = 256;    // samples per buffer
+    int16_t samples[bufferSize];
+    size_t bytes_written;
+
+    while (true) {
+        if (tonePlaying) {
+            for (int i = 0; i < bufferSize; i++) {
+                float s = sinf(tonePhase);
+                samples[i] = (int16_t)(s * volume * 100); // amplitude
+                tonePhase += tonePhaseInc;
+                if (tonePhase >= 2.0f * M_PI) tonePhase -= 2.0f * M_PI;
+            }
+            i2s_write(I2S_NUM_0, samples, bufferSize * sizeof(int16_t), &bytes_written, portMAX_DELAY);
+        } else {
+            vTaskDelay(5 / portTICK_PERIOD_MS); // idle
+        }
+    }
+}
+

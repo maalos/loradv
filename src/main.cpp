@@ -41,9 +41,12 @@ void setup()
 
 	//connectToWiFi();
 
-	// xTaskCreatePinnedToCore(&displayTask, "displayTask", 6000, NULL, 0, &displayTaskHandle, 0);
+	xTaskCreatePinnedToCore(&displayTask, "displayTask", 6000, NULL, 0, &displayTaskHandle, 0);
 
 	setupAudio();
+	// Create tone generation task
+	xTaskCreatePinnedToCore(toneTask, "ToneTask", 2048, NULL, 1, &toneTaskHandle, 0);
+
 	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 10, &audioTaskHandle, 0);	// TODO: lower the stack depth
 
 	// xTaskCreatePinnedToCore(&monitorTask, "monitorTask", 2048, NULL, 5, &monitorTaskHandle, 0);
@@ -68,20 +71,18 @@ void setup()
     }
 
 #endif
+
+
 	sleepReset("Board setup completed");
 }
-
-extern void checkButtonHold();
-extern volatile bool encoderMoved;
-extern volatile long encoder0Pos;
 
 void loop()
 {
 	checkButtonHold();
 
 	if (encoderMoved) {
-    	Serial.printf("Volume: %ld%%\n", encoder0Pos);
-		sleepReset("Volume knob");
+		sleepReset("Encoder");
+        triggerEncoderHandler(false, encoder0Pos);
 		encoderMoved = false;
 	}
 

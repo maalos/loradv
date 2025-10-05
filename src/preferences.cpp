@@ -1,6 +1,6 @@
 #include <config.h>
 
-const Setting defaultSettings[] = {
+const Setting defaultSettings[13] = {
     {"C2MODE",  "Codec2 mode    ", CODEC2_MODE_1200},
     {"C2LPCEN", "C2 LPCPF enable", CODEC2_LPC_PF_ENABLE},
     {"C2LPCBB", "C2 LPCPF bassb.", CODEC2_LPC_PF_BASSBOOST},

@@ -34,9 +34,13 @@ extern volatile char radioAction;
 #define ROTARY_ENCODER_BUTTON_PIN   26
 extern void encoderTask();
 extern void setupEncoder();
+extern volatile long encoder0Pos;
+extern void checkButtonHold();
+extern volatile bool encoderMoved;
+extern volatile long encoder0Pos;
 
 // sleep.cpp
-#define ENABLE_SLEEP
+// #define ENABLE_SLEEP
 #define SLEEP_DELAY_MS  15000  // how long to wait before entering sleep
 #define PIN_TO_BITMASK(GPIO) digitalPinToInterrupt((1ULL << GPIO))
 #define SLEEP_BITMASK   PIN_TO_BITMASK(LORA_RADIO_PIN_B) | PIN_TO_BITMASK(PTTBTN_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_BUTTON_PIN) // | PIN_TO_BITMASK(ROTARY_ENCODER_A_PIN) | PIN_TO_BITMASK(ROTARY_ENCODER_B_PIN) // commented out until pulldown resistors get added or smth
@@ -76,6 +80,11 @@ extern void audioTask(void *param);
 extern void monitorTask(void *param);
 extern void setupAudio();
 extern void resetAGC();
+extern TaskHandle_t toneTaskHandle;
+extern void toneTask(void *param);
+extern void startTone(float freq);
+extern void stopTone();
+
 
 // preferences.cpp
 #define SETTINGS_DIR F("/settings")
@@ -85,7 +94,7 @@ struct Setting {
     float defaultValue;
 };
 extern String getSettingFilePath(const char *abbreviation);
-extern const Setting defaultSettings[];
+extern const Setting defaultSettings[13];
 extern const char *resolveToAbbreviation(const char *key);
 extern const char *resolveToFullKey(const char *abbreviation);
 
@@ -148,25 +157,30 @@ extern void setCrcLength(float crcl);
 #define DISP_BGCOLOR 0x2009
 #define DISPLAY_BACKLIGHT_PIN 16
 extern TFT_eSPI tft;
-extern const char *rssiToSValue(short rssi);
-extern const char *c2ToString();
 extern TaskHandle_t displayTaskHandle;
 extern int16_t ttf_width;
 extern int16_t ttf_halfwidth;
 extern int16_t ttf_height;
 extern int16_t ttf_halfheight;
 extern bool appStopSignal;
-extern void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor);
-extern char array[18];
 extern void displayTask(void *param);
 extern void setupDisplay();
+extern void triggerEncoderHandler(bool pressed, int value);
+
 
 
 // apps/vfo.cpp
+extern void vfoEncoderHandler(bool pressed, int value);
 extern void vfoApp();
+extern void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor);
+extern char array[18];
+extern const char *rssiToSValue(short rssi);
+extern const char *c2ToString();
 
 // apps/settings.cpp
 extern void settingsApp();
+extern void settingsEncoderHandler(bool pressed, int value);
+
 
 // apps/maps.cpp
 extern void connectToWiFi();

@@ -9,19 +9,23 @@ int16_t ttf_height = tft.height();
 int16_t ttf_halfheight = ttf_height / 2;
 
 bool appStopSignal = false;
+unsigned short currentAppIndex = 2;
 
 struct App
 {
     char id;
     const char *name;
     void (*function)();
+    void (*encoderHandler)(bool, int); // -1 = ccw, 0 = no rotation, +1 = cw
 };
 
+void defaultEncoderHandler(bool pressed, int value) {};
+
 App appList[] = {
-    {1, "VFO/CH (home)  ", vfoApp},
-    {2, "Settings       ", settingsApp},
-    {3, "LoRaMaps       ", mapsApp},
-    {0, nullptr, nullptr} // end of the list
+    {1, "VFO/CH (home)  ", vfoApp, defaultEncoderHandler},
+    {2, "Settings       ", settingsApp, settingsEncoderHandler},
+    {3, "LoRaMaps       ", mapsApp, defaultEncoderHandler},
+    {0, nullptr, nullptr, nullptr} // end of the list
 };
 
 App getAppById(int id)
@@ -36,62 +40,20 @@ App getAppById(int id)
     return {0, nullptr, nullptr}; // return end of the list if not found
 }
 
-void updateStringAt(uint8_t x, uint8_t y, const char *text, int fgColor)
-{
-    tft.setTextColor(fgColor, DISP_BGCOLOR, true);
-    tft.setTextDatum(ML_DATUM);
-    tft.drawString(text, 0, y);
-    tft.setTextColor(TFT_WHITE);
-}
-
-const char *rssiToSValue(short rssi)
-{
-    rssi += 160; // idk why
-
-    if (rssi >= -73)
-        return "   S9+";
-    if (rssi >= -93)
-        return "    S9";
-    if (rssi >= -103)
-        return "    S8";
-    if (rssi >= -113)
-        return "    S7";
-    if (rssi >= -123)
-        return "    S6";
-    if (rssi >= -133)
-        return "    S5";
-    if (rssi >= -143)
-        return "    S4";
-    if (rssi >= -153)
-        return "    S3";
-    if (rssi >= -163)
-        return "    S2";
-    if (rssi >= -173)
-        return "    S1";
-
-    return "    S0";
-}
-
-const char *c2ToString()
-{
-    static const char *codec2Modes[] = {
-        "3200", "2400", "1600", "1400", "1300", "1200", nullptr, nullptr, "700C"};
-
-    if (CODEC2_MODE >= 0 && CODEC2_MODE <= 8)
-    {
-        return codec2Modes[CODEC2_MODE];
+void triggerEncoderHandler(bool pressed, int value) {
+    App currentApp = getAppById(currentAppIndex);
+    
+    if (currentApp.encoderHandler) {
+        currentApp.encoderHandler(pressed, value);
     }
 
-    return "WHAT";
 }
-
-char array[18];
 
 void displayTask(void *param)
 {
     Serial.println(F("Display task started"));
 
-    App currentApp = getAppById(1);
+    App currentApp = getAppById(currentAppIndex);
 
     while (true)
     {
@@ -100,7 +62,7 @@ void displayTask(void *param)
             currentApp.function();
         }
 
-        vTaskDelay(250 / portTICK_PERIOD_MS); // update it every 250ms
+        vTaskDelay(50 / portTICK_PERIOD_MS); // update it every x ms
     }
 
     Serial.println(F("Display task done"));

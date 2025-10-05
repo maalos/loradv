@@ -4,22 +4,47 @@
 
 bool settingsAppInitialized = false;
 
+
+void redrawCursor(char row) {
+    tft.fillRect(0, 24, 16, TFT_HEIGHT, DISP_BGCOLOR);
+    tft.drawString(">", 0, 24 * (row + 1));
+}
+
+void settingsEncoderHandler(bool pressed, int value) {
+    Serial.printf("settingsEncoderHandler: %d %d\n", pressed, value);
+};
+
+#define MAX_SCREEN_ROWS 10
+
 void settingsApp()
 {
     if (!settingsAppInitialized)
     {
         tft.setTextSize(1);
+        tft.setTextColor(TFT_WHITE);
+        tft.setTextDatum(TL_DATUM);
+        tft.fillScreen(DISP_BGCOLOR);
+        encoder0Pos = 0;
+        redrawCursor(encoder0Pos);
         settingsAppInitialized = true;
     }
 
-    Serial.println(F("Printing all settings:"));
+    tft.drawString("Settings", 0, 0);
+    for (int i = 0; i < MAX_SCREEN_ROWS - 1; i++) {
+        const Setting &setting = defaultSettings[i];
+        tft.drawString(String(" ") + setting.fullKey, 0, 24 * (i + 1));
+    }
+
+    redrawCursor(encoder0Pos);
+
+    // Serial.println(F("Printing all settings:"));
 
     // Ensure settings directory exists
-    if (!LittleFS.exists(SETTINGS_DIR))
-    {
-        Serial.println(F("Settings directory does not exist"));
-        return;
-    }
+    // if (!LittleFS.exists(SETTINGS_DIR))
+    // {
+        // Serial.println(F("Settings directory does not exist"));
+        // return;
+    // }
 
     /*
     // Open the settings directory

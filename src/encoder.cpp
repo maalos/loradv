@@ -8,9 +8,19 @@ long encoderMaxValue = 100;
 volatile bool encoderButtonPressed = false;
 volatile bool encoderMoved = true;
 
-const int SLEEP_HOLD_TIME = 2000; // 3s
+const int SLEEP_HOLD_TIME = 2000;
 unsigned long buttonPressStart = 0;
 bool buttonHeld = false;
+
+volatile int rawEncoderPos = 0;
+volatile uint8_t prevEncoderState = 0;
+
+const int8_t stateTable[16] = {
+  0,  -1, 1,  0,
+  1,  0,  0,  -1,
+  -1, 0,  0,  1,
+  0,  1,  -1, 0
+};
 
 void checkButtonHold()
 {
@@ -43,26 +53,34 @@ void checkButtonHold()
     }
 }
 
-
-void IRAM_ATTR readEncoderISR()
-{
-    static int8_t old_AB = 0;
-    static int8_t enc_states[16] = {0, 1, -1, 0, -1, 0, 0, 1, 1, 0, 0, -1, 0, -1, 1, 0}; // cw is more
-//  static int8_t enc_states[16] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0}; // cw is less
-
-    old_AB <<= 2;
-    int8_t ENC_PORT = ((digitalRead(ROTARY_ENCODER_B_PIN)) ? (1 << 1) : 0) | ((digitalRead(ROTARY_ENCODER_A_PIN)) ? (1 << 0) : 0);
-    old_AB |= (ENC_PORT & 0x03);
-
-    portENTER_CRITICAL_ISR(&mux);
-    encoder0Pos += enc_states[(old_AB & 0x0f)];
-
-    if (encoder0Pos < encoderMinValue * encoderSteps) encoder0Pos = encoderMinValue * encoderSteps;
-    if (encoder0Pos > encoderMaxValue * encoderSteps) encoder0Pos = encoderMaxValue * encoderSteps;
-
-    encoderMoved = true;
-
-    portEXIT_CRITICAL_ISR(&mux);
+void IRAM_ATTR readEncoderISR() {
+    uint8_t a = digitalRead(ROTARY_ENCODER_A_PIN);
+    uint8_t b = digitalRead(ROTARY_ENCODER_B_PIN);
+    
+    uint8_t currentState = (a << 1) | b;
+    uint8_t transition = (prevEncoderState << 2) | currentState;
+    
+    rawEncoderPos += stateTable[transition];
+    prevEncoderState = currentState;
+    
+    static int lastDetent = 0;
+    int currentDetent = rawEncoderPos / 4;
+    
+    if (currentDetent != lastDetent) {
+        int direction = (currentDetent > lastDetent) ? 1 : -1;
+        
+        encoder0Pos += direction * encoderSteps;
+        
+        if (encoder0Pos < encoderMinValue * encoderSteps)
+            encoder0Pos = encoderMinValue * encoderSteps;
+        if (encoder0Pos > encoderMaxValue * encoderSteps)
+            encoder0Pos = encoderMaxValue * encoderSteps;
+        
+        encoderMoved = true;
+        lastDetent = currentDetent;
+        
+        Serial.println(encoder0Pos);
+    }
 }
 
 void IRAM_ATTR readButtonISR()
@@ -74,6 +92,7 @@ void IRAM_ATTR readButtonISR()
         encoderButtonPressed = digitalRead(ROTARY_ENCODER_BUTTON_PIN);
         Serial.println("Encoder button down");
         sleepReset("Encoder button down");
+        triggerEncoderHandler(true, encoder0Pos);
     }
 
     lastInterruptTime = interruptTime;
@@ -84,6 +103,8 @@ void setupEncoder()
     pinMode(ROTARY_ENCODER_A_PIN, INPUT_PULLDOWN);
     pinMode(ROTARY_ENCODER_B_PIN, INPUT_PULLDOWN);
     pinMode(ROTARY_ENCODER_BUTTON_PIN, INPUT_PULLDOWN);
+    
+    prevEncoderState = (digitalRead(ROTARY_ENCODER_A_PIN) << 1) | digitalRead(ROTARY_ENCODER_B_PIN);
     
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_A_PIN), readEncoderISR, CHANGE);
     attachInterrupt(digitalPinToInterrupt(ROTARY_ENCODER_B_PIN), readEncoderISR, CHANGE);
