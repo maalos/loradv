@@ -41,20 +41,18 @@ void setup()
 
 	//connectToWiFi();
 
-	xTaskCreatePinnedToCore(&displayTask, "displayTask", 6000, NULL, 0, &displayTaskHandle, 0);
+	// xTaskCreatePinnedToCore(&displayTask, "displayTask", 6000, NULL, 10, &displayTaskHandle, 1);
 
 	setupAudio();
 	// Create tone generation task
-	xTaskCreatePinnedToCore(toneTask, "ToneTask", 2048, NULL, 1, &toneTaskHandle, 0);
-
-	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 10, &audioTaskHandle, 0);	// TODO: lower the stack depth
-
+	// xTaskCreatePinnedToCore(toneTask, "toneTask", 2048, NULL, 10, &toneTaskHandle, 0);
+	xTaskCreatePinnedToCore(&audioTask, "audioTask", 32000, NULL, 0, &audioTaskHandle, 0);	// TODO: lower the stack depth
+	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 0, &loraTaskHandle, 1);
 	// xTaskCreatePinnedToCore(&monitorTask, "monitorTask", 2048, NULL, 5, &monitorTaskHandle, 0);
 
 
 	setupEncoder();
 
-	xTaskCreatePinnedToCore(&loraTask, "loraTask", 8000, NULL, 10, &loraTaskHandle, 1);
 	Serial.println(F("Board setup completed"));
 
 #ifdef ENABLE_SLEEP
